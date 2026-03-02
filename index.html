@@ -8,14 +8,18 @@
     <meta name="theme-color" content="#0b1121">
     <title>Oxygen Nursing</title>
     <!-- Google Fonts -->
+    <!-- Fonts & Icons -->
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap"
         rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase CDN -->
+
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+
+    <!-- Supabase & Custom CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -144,18 +148,18 @@
             <!-- Dashboard Page -->
             <section id="page-dashboard" class="page active">
                 <!-- Quick Links Grid -->
-                <div class="dash-links" style="grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                <div class="dash-links">
+                    <div class="dash-link-btn" onclick="navigate('chat')">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>AI Buddy 🩺</span>
+                    </div>
                     <div class="dash-link-btn" onclick="navigate('buddy')">
                         <i class="fa-solid fa-user-doctor"></i>
-                        <span>buddys</span>
+                        <span>Buddy</span>
                     </div>
                     <div class="dash-link-btn" onclick="document.getElementById('social-modal').style.display='flex'">
                         <i class="fa-solid fa-hashtag"></i>
                         <span>التواصل</span>
-                    </div>
-                    <div class="dash-link-btn" onclick="navigate('tools')">
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
-                        <span>الأدوات</span>
                     </div>
                     <div class="dash-link-btn"
                         onclick="navigate('dashboard'); setTimeout(() => { document.querySelector('.announcements-section').scrollIntoView({behavior:'smooth'}); }, 100)">
@@ -294,6 +298,52 @@
                 </div>
             </section>
 
+            <!-- AI Chat Page -->
+            <section id="page-chat" class="page" style="display: none;">
+                <div class="glass-card mb-2"
+                    style="display:flex; justify-content:space-between; align-items:center; padding: 0.8rem 1rem;">
+                    <h2 class="page-title m-0" style="font-size: 1.1rem;"><i class="fa-solid fa-brain"></i> AI Buddy
+                    </h2>
+                    <button class="btn warning-btn" id="ai-quiz-mode"
+                        style="width:auto; padding:0.4rem 0.8rem; font-size:0.75rem;" onclick="startAIQuiz()">
+                        <i class="fa-solid fa-bolt"></i> اختبرني
+                    </button>
+                </div>
+
+                <!-- PDF Multi-Upload Tool -->
+                <div class="glass-card mb-2" style="padding: 0.8rem;">
+                    <label for="pdf-upload-input" class="flex-column flex-center gap-1"
+                        style="cursor:pointer; border: 2px dashed var(--glass-border); border-radius:12px; padding:1.2rem; transition:0.2s; background: rgba(0,0,0,0.1);"
+                        id="pdf-dropzone">
+                        <i class="fa-solid fa-file-pdf" style="font-size:1.4rem; color:var(--primary);"></i>
+                        <span style="font-size:0.75rem; font-weight:700;">ارفق محاضرات الـ PDF للتحليل</span>
+                        <input type="file" id="pdf-upload-input" multiple accept=".pdf" style="display:none;"
+                            onchange="handlePDFUpload(event)">
+                    </label>
+                    <div id="pdf-list-names" class="flex-row gap-0.5 mt-2" style="flex-wrap:wrap; display:none;"></div>
+                </div>
+
+                <!-- Chat Window -->
+                <div id="chat-window" class="glass-card mb-2"
+                    style="height: 380px; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; padding:1rem; scroll-behavior:smooth;">
+                    <div class="chat-bubble ai animate-bubble">
+                        <p>أهلاً بك يا بطل 🩺، ارفع محاضراتك وسأقوم بتلخيصها لك أو الإجابة عن أي تساؤل طبي منها.</p>
+                    </div>
+                </div>
+
+                <!-- Input Area (Mobile Friendly Fix: 16px font-size) -->
+                <div class="glass-card chat-input-area"
+                    style="display:flex; gap:0.5rem; align-items:flex-end; padding:0.6rem;">
+                    <textarea id="ai-chat-input" rows="1" placeholder="اكتب سؤالك هنا..."
+                        style="flex:1; background:transparent; border:none; color:#fff; font-size:16px; outline:none; resize:none; padding:0.4rem; min-height: 40px;"></textarea>
+                    <button class="btn primary-btn" id="send-ai-btn"
+                        style="width:40px; height:40px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center;"
+                        onclick="sendMessageToAI()">
+                        <i class="fa-solid fa-paper-plane" style="font-size: 0.8rem;"></i>
+                    </button>
+                </div>
+            </section>
+
             <!-- Profile Page -->
             <section id="page-profile" class="page" style="display: none;">
                 <div class="profile-header glass-card flex-center text-center mb-3">
@@ -339,108 +389,148 @@
             <section id="page-admin" class="page" style="display: none;">
                 <h2 class="page-title text-warning"><i class="fa-solid fa-shield-halved"></i> لوحة التحكم والإدارة</h2>
 
-                <div class="admin-tabs filter-tabs mt-2" style="flex-wrap: wrap; gap: 0.4rem;">
-                    <button class="filter-btn active" onclick="switchAdminTab('announcement')">إعلان وإشعار</button>
-                    <button class="filter-btn" onclick="switchAdminTab('library-add')">رفع مصدر</button>
-                    <button class="filter-btn" onclick="switchAdminTab('schedule-add')">جدول المحاضرات</button>
-                    <button class="filter-btn" onclick="switchAdminTab('quiz-add')">سؤال اليوم</button>
-                    <button class="filter-btn" onclick="switchAdminTab('users')">حسابات الطلاب</button>
+
+                <!-- Admin Dashboard Grid (Large List Style) -->
+                <div id="admin-dashboard-grid" class="admin-panel-section"
+                    style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('announcement')"
+                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
+                        <i class="fa-solid fa-bullhorn text-warning" style="font-size: 2rem;"></i>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; display: block;">التعميمات والإعلانات</span>
+                            <small class="text-muted">إدارة التبليغات العامة للطلاب</small>
+                        </div>
+                    </button>
+                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('library-add')"
+                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
+                        <i class="fa-solid fa-book-medical text-primary" style="font-size: 2rem;"></i>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; display: block;">مكتبة المحاضرات</span>
+                            <small class="text-muted">إضافة وحذف الكتب والملازم</small>
+                        </div>
+                    </button>
+                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('schedule-add')"
+                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
+                        <i class="fa-solid fa-calendar-days text-secondary" style="font-size: 2rem;"></i>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; display: block;">الجدول الأسبوعي</span>
+                            <small class="text-muted">تحديث أوقات المحاضرات والقاعات</small>
+                        </div>
+                    </button>
+                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('quiz-add')"
+                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
+                        <i class="fa-solid fa-bolt text-info" style="font-size: 2rem;"></i>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; display: block;">سؤال اليوم (الكويزات)</span>
+                            <small class="text-muted">نشر أسئلة سريرية يومية</small>
+                        </div>
+                    </button>
+                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('buddy-mgr')"
+                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
+                        <i class="fa-solid fa-user-doctor text-success" style="font-size: 2rem;"></i>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; display: block;">طلبات Study Buddy</span>
+                            <small class="text-muted">مراجعة والموافقة على طلبات الزملاء</small>
+                        </div>
+                    </button>
+                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('users')"
+                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
+                        <i class="fa-solid fa-users text-muted" style="font-size: 2rem;"></i>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; display: block;">قائمة الطلاب</span>
+                            <small class="text-muted">عرض الطلاب المسجلين بالمنصة</small>
+                        </div>
+                    </button>
                 </div>
 
-                <!-- Add Ad (Announcement) -->
-                <div id="admin-announcement" class="admin-panel-section glass-card mt-2">
-                    <h3 style="margin-bottom:1rem;">إضافة تعميم (جدول ads)</h3>
-                    <div class="input-group">
-                        <textarea id="admin-ad-content" rows="4"
-                            placeholder="اكتب محتوى الإعلان هنا ليراه جميع الطلاب..."></textarea>
+                <!-- Manage Sections -->
+                <div id="admin-announcement" class="admin-panel-section" style="display: none;">
+                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
+                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
+                    <div class="glass-card mb-3">
+                        <h3 class="mb-2">إضافة تعميم جديد</h3>
+                        <textarea id="admin-ad-content" rows="3" placeholder="اكتب التبليغ هنا..."></textarea>
+                        <button class="btn success-btn mt-2" onclick="addAd()"><i class="fa-solid fa-paper-plane"></i>
+                            نشر وإرسال</button>
                     </div>
-                    <button class="btn success-btn" onclick="addAd()"><i class="fa-solid fa-paper-plane"></i> تعميم
-                        ونشر</button>
+                    <div id="admin-ads-list" class="flex-column gap-2 mt-2">
+                        <!-- List for Deleting -->
+                    </div>
                 </div>
 
-                <!-- Add Library Item -->
-                <div id="admin-library-add" class="admin-panel-section glass-card mt-2" style="display: none;">
-                    <h3 style="margin-bottom:1rem;">إضافة للمكتبة (جدول lectures)</h3>
-                    <div class="input-group">
-                        <input type="text" id="admin-lib-title"
-                            placeholder="اسم المحاضرة أو الملزمة (مثال: Anatomy Lec 1)">
+                <div id="admin-library-add" class="admin-panel-section" style="display: none;">
+                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
+                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
+                    <div class="glass-card mb-3">
+                        <h3 class="mb-2">إضافة مادة/محاضرة</h3>
+                        <input type="text" id="admin-lib-title" placeholder="عنوان المحاضرة" class="mb-2">
+                        <input type="url" id="admin-lib-link" placeholder="رابط الملف" class="latin-text mb-2">
+                        <input type="text" id="admin-lib-type" placeholder="القسم (Anatomy/Fundamentals)" class="mb-2">
+                        <button class="btn primary-btn" onclick="addLibraryItem()">رفع وإضافة</button>
                     </div>
-                    <div class="input-group">
-                        <input type="url" id="admin-lib-link" placeholder="رابط التحميل (Google Drive / Telegram Link)"
-                            class="latin-text" style="text-align:left; direction:ltr;">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="admin-lib-type" placeholder="اسم القسم (مثال: Anatomy / English)">
-                    </div>
-                    <button class="btn primary-btn" onclick="addLibraryItem()"><i
-                            class="fa-solid fa-cloud-arrow-up"></i> رفع وإضافة</button>
+                    <div id="admin-lib-manage-list" class="flex-column gap-2"></div>
                 </div>
 
-                <!-- Add Schedule Item -->
-                <div id="admin-schedule-add" class="admin-panel-section glass-card mt-2" style="display: none;">
-                    <h3 style="margin-bottom:1rem;">إضافة حصة للجدول (جدول schedule)</h3>
-                    <div class="input-group">
-                        <select id="admin-sched-day">
-                            <option value="السبت">السبت</option>
+                <div id="admin-schedule-add" class="admin-panel-section" style="display: none;">
+                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
+                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
+                    <div class="glass-card mb-3">
+                        <h3>تحديث الجدول الأسبوعي</h3>
+                        <select id="admin-sched-day" class="mb-2">
                             <option value="الأحد">الأحد</option>
                             <option value="الاثنين">الاثنين</option>
                             <option value="الثلاثاء">الثلاثاء</option>
                             <option value="الأربعاء">الأربعاء</option>
                             <option value="الخميس">الخميس</option>
-                            <option value="الجمعة">الجمعة</option>
                         </select>
+                        <input type="text" id="admin-sched-subject" placeholder="اسم المادة" class="mb-2">
+                        <input type="text" id="admin-sched-time" placeholder="الوقت" class="mb-2">
+                        <input type="text" id="admin-sched-hall" placeholder="القاعة" class="mb-2">
+                        <button class="btn success-btn" onclick="addScheduleItem()">تثبيت في الجدول</button>
                     </div>
-                    <div class="input-group">
-                        <input type="text" id="admin-sched-subject"
-                            placeholder="اسم المادة (مثال: Nursing Fundamentals)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="admin-sched-time" placeholder="الوقت (مثال: 08:30 ص - 10:30 ص)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="admin-sched-hall"
-                            placeholder="القاعة / المختبر (مثال: قاعة 1 أو مختبر التمريض)">
-                    </div>
-                    <button class="btn success-btn" onclick="addScheduleItem()"><i
-                            class="fa-solid fa-calendar-plus"></i> تثبيت في الجدول</button>
+                    <div id="admin-sched-manage-list" class="flex-column gap-2"></div>
                 </div>
 
-                <!-- Add Quiz -->
-                <div id="admin-quiz-add" class="admin-panel-section glass-card mt-2" style="display: none;">
-                    <h3 style="margin-bottom:1rem;">تحديث سؤال اليوم (جدول daily_quiz)</h3>
-                    <div class="input-group">
-                        <textarea id="admin-quiz-q" rows="3" placeholder="اكتب بنية السؤال هنا..."></textarea>
-                    </div>
-                    <div class="input-group"><input type="text" id="admin-quiz-oa" placeholder="الخيار A"></div>
-                    <div class="input-group"><input type="text" id="admin-quiz-ob" placeholder="الخيار B"></div>
-                    <div class="input-group"><input type="text" id="admin-quiz-oc" placeholder="الخيار C"></div>
-                    <div class="input-group">
-                        <select id="admin-quiz-ans" style="font-weight: 800; color:var(--success);">
-                            <option value="a">الخيار A هو الصحيح</option>
-                            <option value="b">الخيار B هو الصحيح</option>
-                            <option value="c">الخيار C هو الصحيح</option>
+                <div id="admin-quiz-add" class="admin-panel-section" style="display: none;">
+                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
+                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
+                    <div class="glass-card mb-3">
+                        <h3>سؤال اليوم</h3>
+                        <textarea id="admin-quiz-q" rows="2" placeholder="السؤال" class="mb-2"></textarea>
+                        <input type="text" id="admin-quiz-oa" placeholder="خيار A" class="mb-2">
+                        <input type="text" id="admin-quiz-ob" placeholder="خيار B" class="mb-2">
+                        <input type="text" id="admin-quiz-oc" placeholder="خيار C" class="mb-2">
+                        <select id="admin-quiz-ans" class="mb-2">
+                            <option value="a">إجابة A</option>
+                            <option value="b">إجابة B</option>
+                            <option value="c">إجابة C</option>
                         </select>
+                        <textarea id="admin-quiz-exp" rows="2" placeholder="الشرح"></textarea>
+                        <button class="btn warning-btn mt-2" onclick="addDailyQuiz()">نشر السؤال</button>
                     </div>
-                    <div class="input-group">
-                        <textarea id="admin-quiz-exp" rows="2"
-                            placeholder="الشرح العلمي للإجابة (اختياري لكن مفضل ومهم جداً)"></textarea>
-                    </div>
-                    <button class="btn warning-btn" onclick="addDailyQuiz()"><i class="fa-solid fa-bolt"></i> طرح السؤال
-                        للطلاب</button>
+                    <div id="admin-quiz-manage-list" class="flex-column gap-2"></div>
                 </div>
 
-                <!-- Admin Users Section -->
-                <div id="admin-users" class="admin-panel-section mt-2" style="display: none;">
+                <div id="admin-buddy-mgr" class="admin-panel-section" style="display: none;">
+                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
+                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
+                    <div class="section-header">طلبات مشاركة الدراسة (قيد الانتظار)</div>
+                    <div id="admin-buddy-pending" class="flex-column gap-2"></div>
+                    <div class="section-header mt-3">الطلبات المنشورة (سابقاً)</div>
+                    <div id="admin-buddy-approved" class="flex-column gap-2"></div>
+                </div>
+
+                <div id="admin-users" class="admin-panel-section" style="display: none;">
+                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
+                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
                     <div class="glass-card mb-2"
                         style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 style="margin:0;">قائمة الطلاب المسجلين</h3>
+                        <h3 style="margin:0; font-size:1rem;">قائمة الطلاب المسجلين</h3>
                         <button class="btn primary-btn" onclick="fetchUsers()"
-                            style="width:auto; padding:0.5rem 0.8rem; font-size: 0.8rem;"><i
+                            style="width:auto; padding:0.4rem 0.8rem; font-size: 0.75rem;"><i
                                 class="fa-solid fa-rotate"></i> تحديث</button>
                     </div>
-                    <div id="admin-users-list" class="flex-column gap-2">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="admin-users-list" class="flex-column gap-2"></div>
                 </div>
             </section>
 
@@ -460,9 +550,9 @@
                 <i class="fa-solid fa-house-chimney-medical"></i>
                 <span>الرئيسية</span>
             </button>
-            <button class="nav-item" onclick="navigate('tools')" data-target="tools">
-                <i class="fa-solid fa-suitcase-medical"></i>
-                <span>القاموس</span>
+            <button class="nav-item" onclick="navigate('chat')" data-target="chat">
+                <i class="fa-solid fa-brain"></i>
+                <span>A.I</span>
             </button>
             <button class="nav-item" onclick="navigate('skills')" data-target="skills">
                 <i class="fa-solid fa-clipboard-list"></i>

@@ -10,8 +10,16 @@ const state = {
     profile: null,
     isAdmin: false,
     skills: JSON.parse(localStorage.getItem('mySkills')) || [],
-    notes: localStorage.getItem('myNotes') || ''
+    notes: localStorage.getItem('myNotes') || '',
+    ai: {
+        pdfTexts: [],
+        history: [], // For memory (last 5 exchanges)
+        isQuizMode: false
+    }
 };
+
+// PDF.js Worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 // --- Constant Data (Local) ---
 const masterSkills = [
@@ -270,6 +278,10 @@ function navigate(pageId) {
     if (target) {
         target.style.display = 'block';
         setTimeout(() => target.classList.add('slide-up', 'active'), 10);
+    }
+
+    if (pageId === 'admin') {
+        switchAdminTab('dashboard-grid');
     }
 
     document.querySelectorAll('.nav-item').forEach(nav => {
@@ -531,8 +543,14 @@ function saveNotes() {
 
 // 7. Study Buddy (`study_requests`)
 async function fetchBuddies() {
-    const { data } = await sb.from('study_requests').select('*').order('created_at', { ascending: false });
+    // Only fetch approved requests for regular users
+    const query = sb.from('study_requests').select('*');
+    if (!state.isAdmin) {
+        query.eq('is_approved', true);
+    }
+    const { data } = await query.order('created_at', { ascending: false });
     const list = document.getElementById('buddy-list');
+    if (!list) return;
     list.innerHTML = '';
 
     if (!data || data.length === 0) {
@@ -582,7 +600,7 @@ async function submitBuddyRequest() {
         subject: subject,
         gender: state.profile?.gender || 'male',
         details: details,
-        is_approved: true // Instant approved for demo, logic by default false if strict admin flow
+        is_approved: false // Now pending admin approval
     }]);
 
     if (error) {
@@ -592,8 +610,7 @@ async function submitBuddyRequest() {
         document.getElementById('buddy-subject').value = '';
         document.getElementById('buddy-tele').value = '';
         document.getElementById('buddy-details').value = '';
-        fetchBuddies();
-        showToast('تم طرح طلبك أمام الزملاء بنجاح!', 'success');
+        showToast('تم إرسال طلبك للمراجعة من قبل الإدارة.', 'info');
     }
 }
 
@@ -691,12 +708,131 @@ async function updateProfile() {
 
 // 10. Admin Logic
 function switchAdminTab(tab) {
-    document.querySelectorAll('.admin-tabs .filter-btn').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
     document.querySelectorAll('.admin-panel-section').forEach(s => s.style.display = 'none');
-    document.getElementById(`admin-${tab}`).style.display = 'block';
+    const el = document.getElementById(`admin-${tab}`);
+    if (el) el.style.display = 'block';
 
     if (tab === 'users') fetchUsers();
+    if (tab === 'announcement') fetchAdminAds();
+    if (tab === 'library-add') fetchAdminLibrary();
+    if (tab === 'schedule-add') fetchAdminSchedule();
+    if (tab === 'quiz-add') fetchAdminQuizzes();
+    if (tab === 'buddy-mgr') fetchAdminBuddies();
+}
+
+async function fetchAdminAds() {
+    const list = document.getElementById('admin-ads-list');
+    if (!list) return;
+    const { data } = await sb.from('ads').select('*').order('created_at', { ascending: false });
+    list.innerHTML = '';
+    data?.forEach(ad => {
+        list.innerHTML += `
+            <div class="admin-item-row">
+                <div class="admin-item-info">
+                   <h4>${ad.content}</h4>
+                   <span>إعلان عام</span>
+                </div>
+                <button class="action-btn text-danger" onclick="deleteItem('ads', '${ad.id}', fetchAdminAds)"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+    });
+}
+
+async function fetchAdminLibrary() {
+    const list = document.getElementById('admin-lib-manage-list');
+    if (!list) return;
+    const { data } = await sb.from('lectures').select('*').order('created_at', { ascending: false });
+    list.innerHTML = '';
+    data?.forEach(lec => {
+        list.innerHTML += `
+            <div class="admin-item-row">
+                <div class="admin-item-info">
+                   <h4>${lec.title}</h4>
+                   <span>القسم: ${lec.subject_type}</span>
+                </div>
+                <button class="action-btn text-danger" onclick="deleteItem('lectures', '${lec.id}', fetchAdminLibrary)"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+    });
+}
+
+async function fetchAdminSchedule() {
+    const list = document.getElementById('admin-sched-manage-list');
+    if (!list) return;
+    const { data } = await sb.from('schedule').select('*').order('day', { ascending: true });
+    list.innerHTML = '';
+    data?.forEach(s => {
+        list.innerHTML += `
+            <div class="admin-item-row">
+                <div class="admin-item-info">
+                   <h4>${s.subject}</h4>
+                   <span>اليوم: ${s.day} | الوقت: ${s.time}</span>
+                </div>
+                <button class="action-btn text-danger" onclick="deleteItem('schedule', '${s.id}', fetchAdminSchedule)"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+    });
+}
+
+async function fetchAdminQuizzes() {
+    const list = document.getElementById('admin-quiz-manage-list');
+    if (!list) return;
+    const { data } = await sb.from('daily_quiz').select('*').order('created_at', { ascending: false });
+    list.innerHTML = '';
+    data?.forEach(q => {
+        list.innerHTML += `
+            <div class="admin-item-row">
+                <div class="admin-item-info">
+                   <h4>${q.question}</h4>
+                   <span>سؤال اليوم</span>
+                </div>
+                <button class="action-btn text-danger" onclick="deleteItem('daily_quiz', '${q.id}', fetchAdminQuizzes)"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+    });
+}
+
+async function fetchAdminBuddies() {
+    const pendingList = document.getElementById('admin-buddy-pending');
+    const approvedList = document.getElementById('admin-buddy-approved');
+    if (!pendingList || !approvedList) return;
+
+    const { data } = await sb.from('study_requests').select('*').order('created_at', { ascending: false });
+    pendingList.innerHTML = '';
+    approvedList.innerHTML = '';
+
+    data?.forEach(b => {
+        const html = `
+            <div class="admin-item-row" style="flex-direction:column; align-items:flex-start;">
+                <div class="m-1"><strong>${b.full_name} - ${b.subject}</strong></div>
+                <div class="text-muted m-1" style="font-size:0.65rem;">${b.details}</div>
+                <div style="display:flex; gap:0.5rem; width:100%; margin-top:0.5rem;">
+                    ${!b.is_approved ? `<button class="btn success-btn" style="padding:0.4rem; font-size:0.7rem; flex:1;" onclick="approveBuddy('${b.id}')">موافقة</button>` : ''}
+                    <button class="btn danger-btn" style="padding:0.4rem; font-size:0.7rem; ${b.is_approved ? 'flex:1' : 'width:30%'}" onclick="deleteItem('study_requests', '${b.id}', fetchAdminBuddies)">حذف</button>
+                </div>
+            </div>
+        `;
+        if (b.is_approved) approvedList.innerHTML += html;
+        else pendingList.innerHTML += html;
+    });
+}
+
+async function approveBuddy(id) {
+    const { error } = await sb.from('study_requests').update({ is_approved: true }).eq('id', id);
+    if (!error) {
+        showToast('تمت الموافقة على الطلب ونشره.', 'success');
+        fetchAdminBuddies();
+    }
+}
+
+async function deleteItem(table, id, callback) {
+    if (!confirm('هل أنت متأكد من حذف هذا العنصر نهائياً؟')) return;
+    const { error } = await sb.from(table).delete().eq('id', id);
+    if (error) showToast('فشل في الحذف', 'error');
+    else {
+        showToast('تم الحذف بنجاح', 'success');
+        if (callback) callback();
+    }
 }
 
 async function fetchUsers() {
@@ -729,10 +865,231 @@ async function addAd() {
     if (!content) return showToast('هيكل التعميم فارغ!', 'error');
 
     const { error } = await sb.from('ads').insert([{ content }]);
-    if (error) showToast('خطأ في الاتصال.', 'error');
+    if (error) showToast('فشل في إرسال الإعلان.', 'error');
     else {
-        showToast('تم رمي التعميم للساحة العامة!', 'success');
+        showToast('تم تعميم الإعلان بنجاح!', 'success');
         document.getElementById('admin-ad-content').value = '';
         fetchLatestAd();
+        fetchAdminAds();
     }
+}
+
+async function addLibraryItem() {
+    const title = document.getElementById('admin-lib-title').value;
+    const link = document.getElementById('admin-lib-link').value;
+    const subject_type = document.getElementById('admin-lib-type').value;
+
+    if (!title || !link || !subject_type) return showToast('رابط وملف المصدر ضروري للمكتبة', 'error');
+
+    const { error } = await sb.from('lectures').insert([{ title, link, subject_type }]);
+    if (error) showToast('فشل التوثيق بسبب عطل بالخادم', 'error');
+    else {
+        showToast('صعد الكتاب للمكتبة بنجاح!', 'success');
+        document.getElementById('admin-lib-title').value = '';
+        document.getElementById('admin-lib-link').value = '';
+        fetchLibrary();
+        fetchAdminLibrary();
+    }
+}
+
+async function addDailyQuiz() {
+    const question = document.getElementById('admin-quiz-q').value;
+    const option_a = document.getElementById('admin-quiz-oa').value;
+    const option_b = document.getElementById('admin-quiz-ob').value;
+    const option_c = document.getElementById('admin-quiz-oc').value;
+    const correct_option = document.getElementById('admin-quiz-ans').value;
+    const explanation = document.getElementById('admin-quiz-exp').value;
+
+    if (!question || !option_a || !option_b || !option_c) return showToast('الاستمارة تحتاج نص وأجوبة لتتأكد من إرسال سؤال طبي مكتمل.', 'error');
+
+    const { error } = await sb.from('daily_quiz').insert([{
+        question, option_a, option_b, option_c,
+        correct_option, explanation
+    }]);
+
+    if (error) showToast('حدث خلل ما في السند للبيانات.', 'error');
+    else {
+        showToast('تم تدشين السؤال الحصري اليومي!', 'success');
+        document.getElementById('admin-quiz-q').value = '';
+        document.getElementById('admin-quiz-oa').value = '';
+        document.getElementById('admin-quiz-ob').value = '';
+        document.getElementById('admin-quiz-oc').value = '';
+        document.getElementById('admin-quiz-exp').value = '';
+        fetchQuiz();
+        fetchAdminQuizzes();
+    }
+}
+
+async function addScheduleItem() {
+    const day = document.getElementById('admin-sched-day').value;
+    const subject = document.getElementById('admin-sched-subject').value;
+    const time = document.getElementById('admin-sched-time').value;
+    const hall = document.getElementById('admin-sched-hall').value;
+
+    if (!subject || !time || !hall) return showToast('يرجى ملء جميع البيانات لإضافة الحصة للجدول.', 'error');
+
+    const { error } = await sb.from('schedule').insert([{
+        day, subject, time, hall
+    }]);
+
+    if (error) showToast('حدث خطأ أثناء الاتصال بقاعدة البيانات.', 'error');
+    else {
+        showToast('تمت إضافة المحاضرة إلى الجدول الأسبوعي!', 'success');
+        document.getElementById('admin-sched-subject').value = '';
+        document.getElementById('admin-sched-time').value = '';
+        document.getElementById('admin-sched-hall').value = '';
+        fetchSchedule();
+        fetchAdminSchedule();
+    }
+}
+// 11. AI Buddy Logic
+async function handlePDFUpload(event) {
+    const files = event.target.files;
+    if (!files.length) return;
+
+    const listNames = document.getElementById('pdf-list-names');
+    listNames.innerHTML = '<span class="text-primary" style="font-size:0.7rem;">جاري معالجة الملفات... <i class="fa-solid fa-spinner fa-spin"></i></span>';
+    listNames.style.display = 'flex';
+
+    state.ai.pdfTexts = []; // Clear current context for new upload batch
+
+    for (let f of files) {
+        try {
+            const arrayBuffer = await f.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = `[ملف: ${f.name}] `;
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(' ');
+            }
+            state.ai.pdfTexts.push(fullText);
+            updatePDFListUI();
+        } catch (err) {
+            console.error('Error parsing PDF:', f.name, err);
+            showToast(`فشل في قراءة ملف: ${f.name}`, 'error');
+        }
+    }
+}
+
+function updatePDFListUI() {
+    const listNames = document.getElementById('pdf-list-names');
+    listNames.innerHTML = '';
+    state.ai.pdfTexts.forEach((txt, idx) => {
+        const name = txt.match(/\[ملف: (.*?)\]/)?.[1] || `محاضرة ${idx + 1}`;
+        listNames.innerHTML += `
+            <div class="glass-card" style="padding:0.4rem 0.8rem; font-size:0.65rem; background:rgba(14,165,233,0.1); border: 1px solid var(--primary); display:flex; align-items:center; gap:0.4rem; border-radius:10px;">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span style="max-width:80px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
+            </div>
+        `;
+    });
+}
+
+async function sendMessageToAI(customPrompt = null) {
+    const inputEl = document.getElementById('ai-chat-input');
+    const question = customPrompt || inputEl.value.trim();
+    if (!question) return;
+
+    if (!customPrompt) {
+        appendChatBubble('user', question);
+        inputEl.value = '';
+    }
+
+    const aiBubble = appendChatBubble('ai', 'جاري التفكير... <i class="fa-solid fa-spinner fa-spin"></i>');
+
+    const context = state.ai.pdfTexts.length > 0 ? "المحتوى المستخرج من المحاضرات:\n" + state.ai.pdfTexts.join('\n\n') : "لا توجد محاضرة مرفوعة حالياً. أجب بناءً على معلوماتك الطبية العامة.";
+    const systemPrompt = `أنت مساعد أكاديمي خبير ومحترف لطلاب التمريض (Oxygen AI). وظيفتك هي الشرح العلمي الدقيق والتبسيط الأكاديمي.
+    
+    قواعد إجبارية للتنسيق (MUST FOLLOW):
+    1. استخدم العناوين (### العنوان) لتقسيم الرد إلى أقسام واضحة.
+    2. استخدم القوائم النقطية (-) لعرض المعلومات المتعددة أو الخطوات بشكل طولي ومنظم.
+    3. استخدم الخط العريض (**المصطلح**) لتمييز المصطلحات الطبية والمفاهيم الجوهرية.
+    4. افصل بين الفقرات بمسافات كافية لضمان راحة العين.
+    5. حافظ على أسلوب تعليمي محفز ومهني باللغة العربية.`;
+
+    // Memory: Take last 5 exchanges (Max 10 messages)
+    const recentHistory = state.ai.history.slice(-10);
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...recentHistory,
+        { role: 'user', content: `${context}\n\nالسؤال: ${question}` }
+    ];
+
+    try {
+        const response = await fetch('http://localhost:3001/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: messages,
+                model: "llama-3.1-8b-instant",
+                temperature: 0.3
+            })
+        });
+
+        const data = await response.json();
+        if (data.content) {
+            aiBubble.innerHTML = formatAIResponse(data.content);
+            state.ai.history.push({ role: 'user', content: question });
+            state.ai.history.push({ role: 'assistant', content: data.content });
+        } else {
+            aiBubble.innerText = "تعذر الحصول على رد حالياً.";
+        }
+    } catch (err) {
+        aiBubble.innerText = "فشل في الوصول للسيرفر. تأكد من تشغيل Node.js Backend.";
+        console.error(err);
+    }
+}
+
+function startAIQuiz() {
+    if (state.ai.pdfTexts.length === 0) {
+        return showToast('ارفع محاضراتك أولاً لنتمكن من اختبارك فيها! 🧪', 'info');
+    }
+    sendMessageToAI("قم بصياغة 5 أسئلة اختيار من متعدد (MCQs) بناءً على نصوص المحاضرات المرفوعة فقط. ركز على النقاط السريرية المهمة، واذكر الإجابات الصحيحة في النهاية.");
+}
+
+function appendChatBubble(role, content) {
+    const chatWindow = document.getElementById('chat-window');
+    const div = document.createElement('div');
+    div.className = `chat-bubble ${role} animate-bubble`;
+    div.innerHTML = `<div>${content}</div>`;
+
+    if (role === 'ai') {
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.gap = '0.5rem';
+        actions.style.marginTop = '0.8rem';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'action-btn';
+        copyBtn.style.fontSize = '0.6rem';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> نسخ';
+        copyBtn.onclick = () => {
+            const rawText = div.innerText.replace('نسخ', '').trim();
+            navigator.clipboard.writeText(rawText);
+            showToast('تم النسخ بنجاح!', 'success');
+        };
+        actions.appendChild(copyBtn);
+        div.appendChild(actions);
+    }
+
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return div.querySelector('div');
+}
+
+function formatAIResponse(text) {
+    // Markdown to HTML conversion
+    let html = marked.parse(text);
+
+    // Very simple Medical Glossary Highlight (Example terms)
+    const terms = ["Aseptic", "IV", "Cannulation", "IM", "Vital Signs", "Gluteal", "Deltoid"];
+    terms.forEach(t => {
+        const regex = new RegExp(`\\b${t}\\b`, 'gi');
+        html = html.replace(regex, `<span class="medical-term" title="مصطلح طبي مهم">${t}</span>`);
+    });
+
+    return html;
 }
