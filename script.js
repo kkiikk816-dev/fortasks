@@ -13,10 +13,15 @@ const state = {
     notes: localStorage.getItem('myNotes') || '',
     ai: {
         pdfTexts: [],
-        history: [], // For memory (last 5 exchanges)
-        isQuizMode: false
+        history: [], // For memory
+        isQuizMode: false,
+        controller: null, // For AbortController
+        lastQuestion: "" // For Regenerate
     }
 };
+
+const GROQ_API_KEY = "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"; // User should replace this
+const GROQ_MODEL = "llama-3.1-8b-instant";
 
 // PDF.js Worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -51,10 +56,7 @@ const dailyTips = [
 
 // --- Boot Logic ---
 document.addEventListener('DOMContentLoaded', async () => {
-    const dailyTipEl = document.getElementById('daily-tip');
-    if (dailyTipEl) {
-        dailyTipEl.innerText = dailyTips[Math.floor(Math.random() * dailyTips.length)];
-    }
+    // Daily Tip removed.
     const notesEl = document.getElementById('my-notes');
     if (notesEl) {
         notesEl.value = state.notes;
@@ -62,6 +64,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     setupDictSearch();
     renderSkills();
+
+    // Initial profile display if state is preset
+    if (state.user) showApp();
 
     // Splash Screen Hiding Logic
     const hideSplash = () => {
@@ -203,7 +208,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     e.preventDefault();
     const btn = e.target.querySelector('button');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> استخراج ההوية...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إنشاء الحساب...';
 
     const name = document.getElementById('reg-name').value;
     const email = document.getElementById('reg-email').value;
@@ -254,10 +259,19 @@ function showApp() {
     document.getElementById('prof-email').innerText = state.user?.email || 'email@example.com';
     document.getElementById('prof-avatar').src = profAvatar;
 
+    // Fill profile inputs
+    const emailInput = document.getElementById('prof-email-input');
+    const genderInput = document.getElementById('prof-gender-input');
+    if (emailInput) emailInput.value = state.user?.email || '';
+    if (genderInput) genderInput.value = state.profile?.gender === 'female' ? 'أنثى' : 'ذكر';
+
     if (state.profile) {
-        document.getElementById('prof-stage').value = state.profile.stage || '';
-        document.getElementById('prof-group').value = state.profile.study_group || '';
-        document.getElementById('prof-telegram').value = state.profile.telegram || '';
+        const stageEl = document.getElementById('prof-stage');
+        const groupEl = document.getElementById('prof-group');
+        const teleEl = document.getElementById('prof-telegram');
+        if (stageEl) stageEl.value = state.profile.stage || '';
+        if (groupEl) groupEl.value = state.profile.study_group || '';
+        if (teleEl) teleEl.value = state.profile.telegram || '';
     }
 
     if (state.isAdmin) {
@@ -321,7 +335,7 @@ async function loadSupabaseData() {
     fetchBuddies();
     fetchSchedule();
     fetchTodaySchedule();
-    fetchSkills(); // New skills fetcher
+    renderSkills(); // Using local render since skills are stored locally
 }
 
 // 1. Daily Quiz (`daily_quiz`)
@@ -623,6 +637,13 @@ async function fetchSchedule() {
     filterSchedule(filterDay);
 }
 
+// Function to refresh all data
+async function refreshAllData() {
+    if (state.user) {
+        await loadSupabaseData();
+    }
+}
+
 async function filterSchedule(day, el) {
     if (el) {
         document.querySelectorAll('#schedule-tabs .tab-pill').forEach(b => b.classList.remove('active'));
@@ -643,15 +664,19 @@ async function filterSchedule(day, el) {
     }
 
     let html = `
-        <div class="glass-card slide-up" style="padding: 1.2rem; border-radius: 20px;">
-            <h3 style="margin-bottom:1.2rem; font-size:1.1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">${day}</h3>
+        <div class="glass-card slide-up mb-3" style="border-radius: 20px;">
+            <h3 style="margin-bottom:1rem; font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; color: var(--primary);">
+                <i class="fa-solid fa-calendar-day"></i> جدول يوم ${day}
+            </h3>
             <div class="schedule-horizontal-row">
                 ${data.map((s, idx) => `
-                    <div style="flex: 1; padding-left: 1.5rem; ${idx !== data.length - 1 ? 'border-left: 2px dashed var(--glass-border)' : ''}; min-width: 140px;">
-                        <p style="font-size: 0.75rem; color: var(--primary); font-weight: 800; margin-bottom: 0.3rem;">محاضرة ${['أولى', 'ثانية', 'ثالثة', 'رابعة', 'خامسة'][idx] || (idx + 1)}</p>
-                        <p style="font-size: 0.95rem; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 0.4rem;">${s.subject}</p>
-                        <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.2rem;"><i class="fa-regular fa-clock"></i> ${s.time}</p>
-                        <p style="font-size: 0.7rem; color: var(--secondary);"><i class="fa-solid fa-location-dot"></i> ${s.hall}</p>
+                    <div class="schedule-item">
+                        <span class="lecture-badge">محاضرة ${idx + 1}</span>
+                        <h4 class="subject-name">${s.subject}</h4>
+                        <div class="lecture-meta">
+                            <span><i class="fa-regular fa-clock"></i> ${s.time}</span>
+                            <span><i class="fa-solid fa-location-dot"></i> ${s.hall}</span>
+                        </div>
                     </div>
                 `).join('')}
             </div>
@@ -942,49 +967,90 @@ async function addScheduleItem() {
         fetchAdminSchedule();
     }
 }
-// 11. AI Buddy Logic
+// --- AI Buddy & Groq API Integration ---
+
 async function handlePDFUpload(event) {
     const files = event.target.files;
     if (!files.length) return;
 
+    const statusBar = document.getElementById('pdf-status-bar');
     const listNames = document.getElementById('pdf-list-names');
-    listNames.innerHTML = '<span class="text-primary" style="font-size:0.7rem;">جاري معالجة الملفات... <i class="fa-solid fa-spinner fa-spin"></i></span>';
-    listNames.style.display = 'flex';
 
-    state.ai.pdfTexts = []; // Clear current context for new upload batch
+    statusBar.style.display = 'flex';
+    listNames.innerHTML = '<span class="text-primary" style="font-size:0.7rem;">جاري استخراج النصوص... <i class="fa-solid fa-spinner fa-spin"></i></span>';
 
     for (let f of files) {
         try {
             const arrayBuffer = await f.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let fullText = `[ملف: ${f.name}] `;
+            let fullText = `[المصدر: ${f.name}]\n`;
 
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                fullText += textContent.items.map(item => item.str).join(' ');
+                fullText += textContent.items.map(item => item.str).join(' ') + "\n";
             }
             state.ai.pdfTexts.push(fullText);
-            updatePDFListUI();
+            renderPDFTags();
         } catch (err) {
-            console.error('Error parsing PDF:', f.name, err);
-            showToast(`فشل في قراءة ملف: ${f.name}`, 'error');
+            console.error('PDF Error:', err);
+            showToast(`فشل قراءة ${f.name}`, 'error');
         }
     }
 }
 
-function updatePDFListUI() {
+function renderPDFTags() {
     const listNames = document.getElementById('pdf-list-names');
-    listNames.innerHTML = '';
-    state.ai.pdfTexts.forEach((txt, idx) => {
-        const name = txt.match(/\[ملف: (.*?)\]/)?.[1] || `محاضرة ${idx + 1}`;
-        listNames.innerHTML += `
-            <div class="glass-card" style="padding:0.4rem 0.8rem; font-size:0.65rem; background:rgba(14,165,233,0.1); border: 1px solid var(--primary); display:flex; align-items:center; gap:0.4rem; border-radius:10px;">
-                <i class="fa-solid fa-file-pdf"></i>
-                <span style="max-width:80px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
+    listNames.innerHTML = state.ai.pdfTexts.map((txt, idx) => {
+        const name = txt.match(/\[المصدر: (.*?)\]/)?.[1] || `ملف ${idx + 1}`;
+        return `
+            <div class="action-mini-btn" style="background:var(--primary-glow); color:var(--primary); white-space:nowrap;">
+                <i class="fa-solid fa-file-pdf"></i> ${name.substring(0, 10)}...
             </div>
         `;
-    });
+    }).join('');
+}
+
+function clearPDFs() {
+    state.ai.pdfTexts = [];
+    document.getElementById('pdf-status-bar').style.display = 'none';
+    showToast('تم إفراغ المحاضرات المرفوعة', 'info');
+}
+
+function handlePDFManualTrigger() {
+    document.getElementById('pdf-upload-input').click();
+}
+
+function autoResizeTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight) + 'px';
+}
+
+function handleChatAction() {
+    if (state.ai.controller) {
+        state.ai.controller.abort();
+        state.ai.controller = null;
+        setChatLoading(false);
+        showToast('تم إيقاف التوليد', 'info');
+    } else {
+        sendMessageToAI();
+    }
+}
+
+function setChatLoading(loading) {
+    const btn = document.getElementById('send-ai-btn');
+    const sendIcon = document.getElementById('send-icon');
+    const stopIcon = document.getElementById('stop-icon');
+
+    if (loading) {
+        btn.classList.add('stopping');
+        sendIcon.style.display = 'none';
+        stopIcon.style.display = 'block';
+    } else {
+        btn.classList.remove('stopping');
+        sendIcon.style.display = 'block';
+        stopIcon.style.display = 'none';
+    }
 }
 
 async function sendMessageToAI(customPrompt = null) {
@@ -993,103 +1059,146 @@ async function sendMessageToAI(customPrompt = null) {
     if (!question) return;
 
     if (!customPrompt) {
+        state.ai.lastQuestion = question;
         appendChatBubble('user', question);
         inputEl.value = '';
+        autoResizeTextarea(inputEl);
+        document.getElementById('regenerate-container').style.display = 'none';
     }
 
-    const aiBubble = appendChatBubble('ai', 'جاري التفكير... <i class="fa-solid fa-spinner fa-spin"></i>');
+    setChatLoading(true);
+    const aiBubble = appendChatBubble('ai', '<i class="fa-solid fa-ellipsis fa-fade"></i> جاري التحليل...');
 
-    const context = state.ai.pdfTexts.length > 0 ? "المحتوى المستخرج من المحاضرات:\n" + state.ai.pdfTexts.join('\n\n') : "لا توجد محاضرة مرفوعة حالياً. أجب بناءً على معلوماتك الطبية العامة.";
-    const systemPrompt = `أنت مساعد أكاديمي خبير ومحترف لطلاب التمريض (Oxygen AI). وظيفتك هي الشرح العلمي الدقيق والتبسيط الأكاديمي.
+    state.ai.controller = new AbortController();
+    const fullContext = state.ai.pdfTexts.join('\n\n');
+
+    const systemPrompt = `أنت مساعد أكاديمي متخصص لطلاب التمريض. وظيفتك هي الشرح والتلخيص والاختبار بناءً على الملفات المرفوعة. 
+    استخدم اللغة العربية الأكاديمية المبسطة.
+    ${fullContext ? `اعتمد على هذا السياق المستخرج من المحاضرات:\n${fullContext}` : 'أجب بناءً على خبرتك الطبية التمريضية بأسلوب أكاديمي.'}
     
-    قواعد إجبارية للتنسيق (MUST FOLLOW):
-    1. استخدم العناوين (### العنوان) لتقسيم الرد إلى أقسام واضحة.
-    2. استخدم القوائم النقطية (-) لعرض المعلومات المتعددة أو الخطوات بشكل طولي ومنظم.
-    3. استخدم الخط العريض (**المصطلح**) لتمييز المصطلحات الطبية والمفاهيم الجوهرية.
-    4. افصل بين الفقرات بمسافات كافية لضمان راحة العين.
-    5. حافظ على أسلوب تعليمي محفز ومهني باللغة العربية.`;
-
-    // Memory: Take last 5 exchanges (Max 10 messages)
-    const recentHistory = state.ai.history.slice(-10);
+    قواعد التنسيق الإجبارية:
+    - استخدم الجداول للمقارنات.
+    - استخدم النقاط للعناصر المتعددة.
+    - استخدم العناوين لتقسيم الموضوع.
+    - ميز المصطلحات الطبية بالخط العريض.`;
 
     const messages = [
         { role: 'system', content: systemPrompt },
-        ...recentHistory,
-        { role: 'user', content: `${context}\n\nالسؤال: ${question}` }
+        ...state.ai.history,
+        { role: 'user', content: question }
     ];
 
     try {
-        const response = await fetch('http://localhost:3001/api/chat', {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            signal: state.ai.controller.signal,
             body: JSON.stringify({
+                model: GROQ_MODEL,
                 messages: messages,
-                model: "llama-3.1-8b-instant",
-                temperature: 0.3
+                temperature: 0.5,
+                max_tokens: 2048
             })
         });
 
         const data = await response.json();
-        if (data.content) {
-            aiBubble.innerHTML = formatAIResponse(data.content);
+        state.ai.controller = null;
+        setChatLoading(false);
+
+        if (data.choices?.[0]?.message?.content) {
+            const answer = data.choices[0].message.content;
+            aiBubble.innerHTML = `
+                <div class="bubble-content">${formatAIResponse(answer)}</div>
+                <div class="chat-actions">
+                    <button class="action-mini-btn" onclick="copyToClipboard(this)">
+                        <i class="fa-regular fa-copy"></i> نسخ
+                    </button>
+                </div>
+            `;
             state.ai.history.push({ role: 'user', content: question });
-            state.ai.history.push({ role: 'assistant', content: data.content });
+            state.ai.history.push({ role: 'assistant', content: answer });
+
+            // Limit history
+            if (state.ai.history.length > 20) state.ai.history = state.ai.history.slice(-20);
+
+            document.getElementById('regenerate-container').style.display = 'flex';
         } else {
-            aiBubble.innerText = "تعذر الحصول على رد حالياً.";
+            aiBubble.innerText = "حدث خطأ في معالجة الطلب. تأكد من إعداد API Key.";
         }
     } catch (err) {
-        aiBubble.innerText = "فشل في الوصول للسيرفر. تأكد من تشغيل Node.js Backend.";
+        if (err.name === 'AbortError') return;
+        setChatLoading(false);
+        aiBubble.innerText = "تعذر الاتصال بـ Groq. تأكد من الإنترنت أو صلاحية المفتاح.";
         console.error(err);
     }
+}
+
+function appendChatBubble(role, content) {
+    const window = document.getElementById('chat-window');
+    const div = document.createElement('div');
+    div.className = `chat-bubble ${role}`;
+    div.innerHTML = content;
+    window.appendChild(div);
+    window.scrollTop = window.scrollHeight;
+    return div;
+}
+
+function formatAIResponse(text) {
+    return marked.parse(text);
+}
+
+function newChat() {
+    state.ai.history = [];
+    document.getElementById('chat-window').innerHTML = `
+        <div class="chat-bubble ai">
+            <div class="bubble-content">
+                <p>تم بدء محادثة جديدة. كيف يمكنني مساعدتك في دراستك اليوم؟ 🩺</p>
+                <div class="chat-actions">
+                    <button class="action-mini-btn" onclick="handlePDFManualTrigger()">
+                        <i class="fa-solid fa-file-pdf"></i> ارفق محاضرات
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('regenerate-container').style.display = 'none';
+    showToast('تم مسح سجل الدردشة لبناء سياق جديد', 'info');
+}
+
+function regenerateResponse() {
+    if (!state.ai.lastQuestion) return;
+
+    // Remove last two messages from history if they exist (assistant and user)
+    if (state.ai.history.length >= 2) {
+        state.ai.history.splice(-2, 2);
+    }
+
+    // Remove last bubbles
+    const window = document.getElementById('chat-window');
+    if (window.children.length >= 2) {
+        window.removeChild(window.lastChild); // ai
+    }
+
+    sendMessageToAI(state.ai.lastQuestion);
 }
 
 function startAIQuiz() {
     if (state.ai.pdfTexts.length === 0) {
         return showToast('ارفع محاضراتك أولاً لنتمكن من اختبارك فيها! 🧪', 'info');
     }
-    sendMessageToAI("قم بصياغة 5 أسئلة اختيار من متعدد (MCQs) بناءً على نصوص المحاضرات المرفوعة فقط. ركز على النقاط السريرية المهمة، واذكر الإجابات الصحيحة في النهاية.");
+    sendMessageToAI("قم بصياغة 5 أسئلة اختيار من متعدد (MCQs) بناءً على نصوص المحاضرات المرفوعة. ركز على النقاط السريرية المهمة، واذكر الإجابات الصحيحة في النهاية بتنسيق جدول.");
 }
 
-function appendChatBubble(role, content) {
-    const chatWindow = document.getElementById('chat-window');
-    const div = document.createElement('div');
-    div.className = `chat-bubble ${role} animate-bubble`;
-    div.innerHTML = `<div>${content}</div>`;
-
-    if (role === 'ai') {
-        const actions = document.createElement('div');
-        actions.style.display = 'flex';
-        actions.style.gap = '0.5rem';
-        actions.style.marginTop = '0.8rem';
-
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'action-btn';
-        copyBtn.style.fontSize = '0.6rem';
-        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> نسخ';
-        copyBtn.onclick = () => {
-            const rawText = div.innerText.replace('نسخ', '').trim();
-            navigator.clipboard.writeText(rawText);
-            showToast('تم النسخ بنجاح!', 'success');
-        };
-        actions.appendChild(copyBtn);
-        div.appendChild(actions);
-    }
-
-    chatWindow.appendChild(div);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-    return div.querySelector('div');
-}
-
-function formatAIResponse(text) {
-    // Markdown to HTML conversion
-    let html = marked.parse(text);
-
-    // Very simple Medical Glossary Highlight (Example terms)
-    const terms = ["Aseptic", "IV", "Cannulation", "IM", "Vital Signs", "Gluteal", "Deltoid"];
-    terms.forEach(t => {
-        const regex = new RegExp(`\\b${t}\\b`, 'gi');
-        html = html.replace(regex, `<span class="medical-term" title="مصطلح طبي مهم">${t}</span>`);
+function copyToClipboard(btn) {
+    const bubble = btn.closest('.chat-bubble');
+    const text = bubble.querySelector('.bubble-content').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ';
+        setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
     });
-
-    return html;
 }
+

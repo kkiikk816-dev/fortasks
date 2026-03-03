@@ -7,7 +7,6 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0b1121">
     <title>Oxygen Nursing</title>
-    <!-- Google Fonts -->
     <!-- Fonts & Icons -->
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap"
@@ -17,9 +16,8 @@
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
-
-    <!-- Supabase & Custom CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -31,13 +29,8 @@
         </div>
         <h1 class="logo-text latin-text">Oxygen Nursing</h1>
         <p class="tagline">شريكك الأكاديمي والعملي</p>
-
         <div class="ecg-loader">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
+            <span></span><span></span><span></span><span></span><span></span>
         </div>
     </div>
 
@@ -48,13 +41,10 @@
                 <h2>أهلاً بك في Oxygen</h2>
                 <p class="text-muted">المنصة الطبية المتكاملة لطلاب التمريض</p>
             </div>
-
             <div class="auth-tabs">
                 <button class="tab-btn active" onclick="switchAuthTab('login')">تسجيل دخول</button>
                 <button class="tab-btn" onclick="switchAuthTab('register')">حساب جديد</button>
             </div>
-
-            <!-- Login Form -->
             <form id="login-form" class="auth-form active">
                 <div class="input-group">
                     <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
@@ -66,19 +56,17 @@
                 </div>
                 <button type="submit" class="btn primary-btn mt-2">دخول <i class="fa-solid fa-arrow-left"></i></button>
             </form>
-
-            <!-- Register Form -->
             <form id="register-form" class="auth-form" style="display: none;">
                 <div class="input-group">
                     <input type="text" id="reg-name" placeholder="الاسم الثلاثي" required>
                     <i class="fa-solid fa-user"></i>
                 </div>
                 <div class="input-group">
-                    <input type="email" id="reg-email" placeholder="البريد الإلكتروني الجامعي أو الشخصي" required>
+                    <input type="email" id="reg-email" placeholder="البريد الإلكتروني" required>
                     <i class="fa-solid fa-envelope"></i>
                 </div>
                 <div class="input-group">
-                    <input type="password" id="reg-password" placeholder="كلمة المرور (6 أحرف على الأقل)" required>
+                    <input type="password" id="reg-password" placeholder="كلمة المرور (6 أحرف)" required>
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
                 <div class="input-group">
@@ -92,14 +80,12 @@
                 <button type="submit" class="btn success-btn mt-2">إنشاء حساب <i
                         class="fa-solid fa-user-plus"></i></button>
             </form>
-            <div id="auth-error" class="error-text text-danger text-center mt-3" style="font-weight: 700;"></div>
+            <div id="auth-error" class="error-text text-danger text-center mt-3"></div>
         </div>
     </div>
 
-    <!-- Main App Container -->
+    <!-- Main Container -->
     <div id="app-container" class="screen" style="display: none;">
-
-        <!-- Header -->
         <header class="app-header">
             <div class="user-info" onclick="navigate('profile')">
                 <img src="" id="header-avatar" alt="Avatar" class="avatar">
@@ -113,28 +99,23 @@
             </div>
         </header>
 
-        <!-- Sidebar / Drawer -->
+        <!-- Sidebar -->
         <div id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <h2>O₂ القائمة</h2>
-                <button onclick="closeSidebar()" class="action-btn" style="background:transparent; border:none;"><i
-                        class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeSidebar()" class="action-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <ul class="sidebar-menu">
                 <li onclick="navigate('dashboard'); closeSidebar()"><i class="fa-solid fa-house-chimney-medical"></i>
                     الرئيسية</li>
                 <li onclick="navigate('library'); closeSidebar()"><i class="fa-solid fa-book-medical"></i> المحاضرات
                 </li>
-                <li onclick="navigate('schedule'); closeSidebar()"><i class="fa-solid fa-calendar-days"></i> الجدول
-                    الأسبوعي</li>
-                <li onclick="navigate('skills'); closeSidebar()"><i class="fa-solid fa-clipboard-list"></i> سجل المهارات
+                <li onclick="navigate('schedule'); closeSidebar()"><i class="fa-solid fa-calendar-days"></i> الجدول</li>
+                <li onclick="navigate('skills'); closeSidebar()"><i class="fa-solid fa-clipboard-list"></i> المهارات
                 </li>
-                <li onclick="navigate('buddy'); closeSidebar()"><i class="fa-solid fa-user-doctor"></i> Study Buddy</li>
-                <li onclick="navigate('tools'); closeSidebar()"><i class="fa-solid fa-kit-medical"></i> القاموس والأدوات
-                </li>
-
-                <!-- Admin Only -->
-                <li id="admin-menu-item" class="admin-item" style="display: none;"
+                <li onclick="navigate('chat'); closeSidebar()"><i class="fa-solid fa-brain"></i> AI Buddy</li>
+                <li onclick="navigate('tools'); closeSidebar()"><i class="fa-solid fa-kit-medical"></i> الأدوات</li>
+                <li id="admin-menu-item" class="admin-item" style="display:none;"
                     onclick="navigate('admin'); closeSidebar()">
                     <i class="fa-solid fa-screwdriver-wrench"></i> لوحة الإدارة
                 </li>
@@ -142,79 +123,48 @@
         </div>
         <div id="sidebar-overlay" class="modal-overlay" style="display: none;" onclick="closeSidebar()"></div>
 
-        <!-- Main Content Area (Pages) -->
         <main class="main-content">
-
-            <!-- Dashboard Page -->
+            <!-- Dashboard -->
             <section id="page-dashboard" class="page active">
-                <!-- Quick Links Grid -->
                 <div class="dash-links">
-                    <div class="dash-link-btn" onclick="navigate('chat')">
-                        <i class="fa-solid fa-brain"></i>
-                        <span>AI Buddy 🩺</span>
-                    </div>
-                    <div class="dash-link-btn" onclick="navigate('buddy')">
-                        <i class="fa-solid fa-user-doctor"></i>
-                        <span>Buddy</span>
-                    </div>
-                    <div class="dash-link-btn" onclick="document.getElementById('social-modal').style.display='flex'">
-                        <i class="fa-solid fa-hashtag"></i>
-                        <span>التواصل</span>
-                    </div>
-                    <div class="dash-link-btn"
-                        onclick="navigate('dashboard'); setTimeout(() => { document.querySelector('.announcements-section').scrollIntoView({behavior:'smooth'}); }, 100)">
-                        <i class="fa-solid fa-bullhorn"></i>
-                        <span>التبليغات</span>
-                    </div>
+                    <div class="dash-link-btn" onclick="navigate('chat')"><i class="fa-solid fa-brain"></i><span>AI
+                            Buddy</span></div>
+                    <div class="dash-link-btn" onclick="navigate('buddy')"><i
+                            class="fa-solid fa-user-doctor"></i><span>Buddy</span></div>
+                    <div class="dash-link-btn" onclick="document.getElementById('social-modal').style.display='flex'"><i
+                            class="fa-solid fa-hashtag"></i><span>التواصل</span></div>
+                    <div class="dash-link-btn" onclick="navigate('tools')"><i
+                            class="fa-solid fa-kit-medical"></i><span>الأدوات</span></div>
                 </div>
-
-                <!-- Latest Announcement -->
                 <div class="announcements-section">
-                    <div class="section-header" style="font-weight: 800; color: var(--text-muted);">
-                        آخر التبليغات
-                    </div>
-                    <div id="latest-announcement" class="mb-3">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div class="section-header">آخر التبليغات</div>
+                    <div id="latest-announcement"></div>
                 </div>
-
-                <!-- Today's Schedule -->
                 <div class="section-container">
-                    <div class="section-header" style="font-size: 0.95rem; margin-bottom: 0.6rem;">
-                        <i class="fa-regular fa-calendar-check text-primary"></i> محاضرات اليوم
-                    </div>
-                    <div id="today-schedule-list" class="glass-card today-sched-card mb-3">
-                        <!-- Injected via JS -->
+                    <div class="section-header">محاضرات اليوم</div>
+                    <div id="today-schedule-list" class="glass-card clickable-card" onclick="navigate('schedule')">
                     </div>
                 </div>
-
-                <!-- Daily Quiz -->
                 <div class="glass-card quiz-card mb-3">
-                    <div class="quiz-badge" style="margin-bottom: 0.8rem;"><i class="fa-solid fa-bolt"></i> سؤال اليوم
-                    </div>
+                    <div class="quiz-badge"><i class="fa-solid fa-bolt"></i> سؤال اليوم</div>
                     <div id="daily-quiz-container">
-                        <p id="quiz-question" style="font-size: 1rem; margin-bottom: 1rem;">جاري التحميل...</p>
+                        <p id="quiz-question">جاري التحميل...</p>
                         <div class="options" id="quiz-options"></div>
                         <div id="quiz-feedback" style="display: none;" class="feedback"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- Library Page -->
+            <!-- Library -->
             <section id="page-library" class="page" style="display: none;">
-                <h2 class="page-title"><i class="fa-solid fa-book-open-reader"></i> المكتبة الرقمية</h2>
-
-                <div id="library-tabs" class="compact-tabs">
-                    <!-- Dynamic subject tabs injected via JS -->
-                </div>
-                <div id="library-list" class="grid-list">
-                    <!-- Injected via JS from 'lectures' table -->
-                </div>
+                <h2 class="page-title"><i class="fa-solid fa-book-open-reader"></i> المكتبة</h2>
+                <div id="library-tabs" class="compact-tabs"></div>
+                <div id="library-list" class="grid-list"></div>
             </section>
 
-            <!-- Schedule Page -->
+            <!-- Schedule -->
             <section id="page-schedule" class="page" style="display: none;">
-                <h2 class="page-title"><i class="fa-regular fa-calendar-check text-primary"></i> الجدول الأسبوعي</h2>
+                <h2 class="page-title"><i class="fa-regular fa-calendar-check"></i> الجدول الأسبوعي</h2>
                 <div id="schedule-tabs" class="compact-tabs">
                     <button class="tab-pill active" onclick="filterSchedule('الأحد', this)">الأحد</button>
                     <button class="tab-pill" onclick="filterSchedule('الاثنين', this)">الاثنين</button>
@@ -222,423 +172,297 @@
                     <button class="tab-pill" onclick="filterSchedule('الأربعاء', this)">الأربعاء</button>
                     <button class="tab-pill" onclick="filterSchedule('الخميس', this)">الخميس</button>
                 </div>
-                <div id="schedule-container" class="grid-list">
-                    <!-- Injected via JS from 'schedule' table -->
-                </div>
+                <div id="schedule-container" class="grid-list"></div>
             </section>
 
-            <!-- Skills Checklist Page -->
+            <!-- Skills -->
             <section id="page-skills" class="page" style="display: none;">
-                <div class="glass-card mb-3" style="border-radius:20px; border-right:4px solid var(--success);">
-                    <h2 class="page-title mb-1" style="font-size: 1rem;"><i
-                            class="fa-solid fa-clipboard-check text-success"></i> سجل المهارات</h2>
-                    <div id="skills-progress-text"
-                        style="font-size: 0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.4rem;">جاري
-                        احتساب التقدم...</div>
+                <div class="glass-card mb-3">
+                    <h2 class="page-title">سجل المهارات</h2>
+                    <div id="skills-progress-text">جاري التحميل...</div>
                     <div class="skills-progress-container">
                         <div id="skills-progress-bar" class="skills-progress-bar"></div>
                     </div>
                 </div>
-                <div id="skills-congrats" class="congrats-card slide-up" style="display: none;">
-                    <i class="fa-solid fa-award text-warning"
-                        style="font-size: 2rem; margin-bottom: 0.6rem; display: block;"></i>
-                    <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.2rem;">رائع! لقد أتقنت جميع المهارات</h3>
-                    <p style="font-size: 0.8rem; color: #fff; opacity: 0.9;">أنت الآن ممرض محترف، استمر بهذا الشغف! 🩺🌟
-                    </p>
-                </div>
-                <div id="skills-list" class="flex-column gap-2">
-                    <!-- Injected via JS -->
-                </div>
+                <div id="skills-congrats" style="display: none;" class="congrats-card">أنت مبدع! لقد أتقنت جميع المهارات
+                    🔥</div>
+                <div id="skills-list" class="flex-column gap-2"></div>
             </section>
 
-            <!-- Study Buddy Page -->
+            <!-- Buddy -->
             <section id="page-buddy" class="page" style="display: none;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
-                    <h2 class="page-title" style="margin:0;"><i class="fa-solid fa-users-viewfinder"></i> Study Buddy
-                    </h2>
-                    <button class="btn primary-btn"
-                        style="width:auto; padding:0.6rem 1rem; border-radius: 30px; font-size: 0.9rem;"
-                        onclick="document.getElementById('buddy-modal').style.display='flex'">
-                        <i class="fa-solid fa-plus"></i> طلب جديد
-                    </button>
+                <div class="flex-row justify-between mb-2">
+                    <h2 class="page-title">Study Buddy</h2>
+                    <button class="btn primary-btn w-auto"
+                        onclick="document.getElementById('buddy-modal').style.display='flex'">طلب جديد</button>
                 </div>
-
-                <p class="text-muted mb-3" style="font-weight:600;">ابحث عن شريك للدراسة أو ساعد أحد زملائك في فهم مادة
-                    معينة.</p>
-
-                <div id="buddy-list" class="grid-list">
-                    <!-- Injected via JS from 'study_requests' table -->
-                </div>
+                <div id="buddy-list" class="grid-list"></div>
             </section>
 
-            <!-- Tools Page (Dict & GPA) -->
+            <!-- Tools -->
             <section id="page-tools" class="page" style="display: none;">
                 <h2 class="page-title"><i class="fa-solid fa-stethoscope"></i> الأدوات السريرية</h2>
-
-                <!-- Medical Dictionary -->
-                <div class="glass-card search-card mb-3">
-                    <div class="section-header"><i class="fa-solid fa-book-medical"></i> القاموس الطبي السريع</div>
-                    <div class="input-group mb-1">
-                        <input type="text" id="dict-search" placeholder="ابحث عن مصطلح (مثال: Hypoxia)..."
-                            style="padding-left:1.2rem; padding-right:1.2rem; text-align:left; direction:ltr;"
-                            class="latin-text">
-                        <i class="fa-solid fa-magnifying-glass" style="left:1.2rem; right:auto;"></i>
+                <div class="glass-card mb-3">
+                    <div class="section-header">القاموس الطبي</div>
+                    <div class="input-group">
+                        <input type="text" id="dict-search" placeholder="ابحث عن مصطلح...">
+                        <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
-                    <div id="dict-results" class="dict-results"></div>
+                    <div id="dict-results" class="mt-2"></div>
                 </div>
-
-                <!-- My Notes (LocalStorage) -->
                 <div class="glass-card">
-                    <div class="section-header"><i class="fa-solid fa-pen-to-square"></i> ملاحظاتي السريرية</div>
-                    <div class="input-group mb-2">
-                        <textarea id="my-notes" placeholder="اكتب ملاحظاتك من المستشفى أو المحاضرة هنا..."></textarea>
-                    </div>
-                    <button class="btn success-btn" style="padding:0.8rem;" onclick="saveNotes()"><i
-                            class="fa-solid fa-cloud-arrow-up"></i> حفظ محلياً</button>
+                    <div class="section-header">ملاحظاتي</div>
+                    <textarea id="my-notes" rows="5" placeholder="اكتب ملاحظاتك هنا..."></textarea>
+                    <button class="btn success-btn w-100 mt-2" onclick="saveNotes()">حفظ الملاحظات</button>
                 </div>
             </section>
 
-            <!-- AI Chat Page -->
+            <!-- AI Chat -->
             <section id="page-chat" class="page" style="display: none;">
-                <div class="glass-card mb-2"
-                    style="display:flex; justify-content:space-between; align-items:center; padding: 0.8rem 1rem;">
-                    <h2 class="page-title m-0" style="font-size: 1.1rem;"><i class="fa-solid fa-brain"></i> AI Buddy
-                    </h2>
-                    <button class="btn warning-btn" id="ai-quiz-mode"
-                        style="width:auto; padding:0.4rem 0.8rem; font-size:0.75rem;" onclick="startAIQuiz()">
-                        <i class="fa-solid fa-bolt"></i> اختبرني
-                    </button>
-                </div>
-
-                <!-- PDF Multi-Upload Tool -->
-                <div class="glass-card mb-2" style="padding: 0.8rem;">
-                    <label for="pdf-upload-input" class="flex-column flex-center gap-1"
-                        style="cursor:pointer; border: 2px dashed var(--glass-border); border-radius:12px; padding:1.2rem; transition:0.2s; background: rgba(0,0,0,0.1);"
-                        id="pdf-dropzone">
-                        <i class="fa-solid fa-file-pdf" style="font-size:1.4rem; color:var(--primary);"></i>
-                        <span style="font-size:0.75rem; font-weight:700;">ارفق محاضرات الـ PDF للتحليل</span>
+                <div class="chat-container">
+                    <div class="chat-header glass-card">
+                        <div class="flex-row gap-2">
+                            <i class="fa-solid fa-brain-circuit text-primary"></i>
+                            <div>
+                                <h2 class="m-0" style="font-size:1rem;">O₂ AI Buddy</h2><small>Llama 3.1 ⚡</small>
+                            </div>
+                        </div>
+                        <div class="flex-row gap-2">
+                            <button class="action-btn" onclick="newChat()"><i class="fa-solid fa-plus"></i></button>
+                            <button class="btn warning-btn w-auto" onclick="startAIQuiz()">اختبرني</button>
+                        </div>
+                    </div>
+                    <div id="pdf-status-bar" class="pdf-status-bar" style="display: none;">
+                        <div id="pdf-list-names" class="pdf-tags"></div>
+                        <button class="clear-pdfs-btn" onclick="clearPDFs()"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div id="chat-window" class="chat-window">
+                        <div class="chat-bubble ai">
+                            <div class="bubble-content">
+                                <p>أهلاً بك! ارفع محاضراتك وسأقوم بمساعدتك. 🩺</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="regenerate-container" class="regenerate-container" style="display: none;">
+                        <button class="btn glass-btn" onclick="regenerateResponse()"><i class="fa-solid fa-rotate"></i>
+                            إعادة التوليد</button>
+                    </div>
+                    <div class="chat-input-wrapper glass-card">
+                        <button class="attach-btn" onclick="handlePDFManualTrigger()"><i
+                                class="fa-solid fa-paperclip"></i></button>
                         <input type="file" id="pdf-upload-input" multiple accept=".pdf" style="display:none;"
                             onchange="handlePDFUpload(event)">
-                    </label>
-                    <div id="pdf-list-names" class="flex-row gap-0.5 mt-2" style="flex-wrap:wrap; display:none;"></div>
-                </div>
-
-                <!-- Chat Window -->
-                <div id="chat-window" class="glass-card mb-2"
-                    style="height: 380px; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; padding:1rem; scroll-behavior:smooth;">
-                    <div class="chat-bubble ai animate-bubble">
-                        <p>أهلاً بك يا بطل 🩺، ارفع محاضراتك وسأقوم بتلخيصها لك أو الإجابة عن أي تساؤل طبي منها.</p>
+                        <textarea id="ai-chat-input" rows="1" placeholder="اسألني أي شيء..."
+                            oninput="autoResizeTextarea(this)"></textarea>
+                        <button class="send-btn" id="send-ai-btn" onclick="handleChatAction()">
+                            <i class="fa-solid fa-paper-plane" id="send-icon"></i>
+                            <div class="stop-icon" id="stop-icon" style="display: none;"></div>
+                        </button>
                     </div>
-                </div>
-
-                <!-- Input Area (Mobile Friendly Fix: 16px font-size) -->
-                <div class="glass-card chat-input-area"
-                    style="display:flex; gap:0.5rem; align-items:flex-end; padding:0.6rem;">
-                    <textarea id="ai-chat-input" rows="1" placeholder="اكتب سؤالك هنا..."
-                        style="flex:1; background:transparent; border:none; color:#fff; font-size:16px; outline:none; resize:none; padding:0.4rem; min-height: 40px;"></textarea>
-                    <button class="btn primary-btn" id="send-ai-btn"
-                        style="width:40px; height:40px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center;"
-                        onclick="sendMessageToAI()">
-                        <i class="fa-solid fa-paper-plane" style="font-size: 0.8rem;"></i>
-                    </button>
                 </div>
             </section>
 
-            <!-- Profile Page -->
+            <!-- Profile -->
             <section id="page-profile" class="page" style="display: none;">
-                <div class="profile-header glass-card flex-center text-center mb-3">
-                    <img src="" id="prof-avatar" class="avatar lg-avatar" alt="Avatar">
+                <div class="profile-header glass-card text-center mb-3">
+                    <img src="" id="prof-avatar" class="avatar lg-avatar">
                     <h2 id="prof-name">الطالب</h2>
-                    <p id="prof-email" class="text-primary latin-text mt-1" style="font-weight:600; font-size:0.9rem;">
-                        email</p>
+                    <p id="prof-email" class="latin-text text-primary"></p>
                 </div>
-
                 <div class="glass-card">
-                    <div class="section-header"><i class="fa-solid fa-address-card"></i> البيانات الشخصية والأكاديمية
-                    </div>
                     <form id="profile-form">
-                        <div class="input-group mt-3">
+                        <div class="input-group mb-2 readonly-group">
+                            <input type="email" id="prof-email-input" readonly placeholder="البريد الإلكتروني">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                        <div class="input-group mb-2 readonly-group">
+                            <input type="text" id="prof-gender-input" readonly placeholder="الجنس">
+                            <i class="fa-solid fa-venus-mars"></i>
+                        </div>
+                        <div class="input-group mb-2">
                             <select id="prof-stage">
-                                <option value="" disabled selected>اختيار المرحلة الدراسية</option>
-                                <option value="المرحلة الأولى">المرحلة الأولى</option>
-                                <option value="المرحلة الثانية">المرحلة الثانية</option>
-                                <option value="المرحلة الثالثة">المرحلة الثالثة</option>
-                                <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                                <option value="" disabled selected>اختيار المرحلة</option>
+                                <option value="الأولى">الأولى</option>
+                                <option value="الثانية">الثانية</option>
+                                <option value="الثالثة">الثالثة</option>
+                                <option value="الرابعة">الرابعة</option>
                             </select>
                             <i class="fa-solid fa-user-graduate"></i>
                         </div>
-                        <div class="input-group">
-                            <input type="text" id="prof-group" placeholder="الشعبة (مثال: A أو B)">
-                            <i class="fa-solid fa-chalkboard-user"></i>
+                        <div class="input-group mb-2">
+                            <input type="text" id="prof-group" placeholder="الشعبة (مثال: A)">
+                            <i class="fa-solid fa-users"></i>
                         </div>
-                        <div class="input-group">
-                            <input type="text" id="prof-telegram" placeholder="معرف تليجرام للتواصل (بداية بـ @)"
-                                class="latin-text" style="direction:ltr; text-align:left;">
-                            <i class="fa-brands fa-telegram text-primary"></i>
+                        <div class="input-group mb-2">
+                            <input type="text" id="prof-telegram" placeholder="@username" class="latin-text">
+                            <i class="fa-brands fa-telegram"></i>
                         </div>
-                        <button type="button" onclick="updateProfile()" class="btn primary-btn mt-3">حفظ ملفك الأكاديمي
-                            <i class="fa-solid fa-check"></i></button>
-                        <button type="button" onclick="logout()" class="btn danger-btn mt-2"
-                            style="padding:0.8rem; font-size: 0.95rem;">تسجيل خروج <i
-                                class="fa-solid fa-arrow-right-from-bracket"></i></button>
+                        <button type="button" class="btn primary-btn mb-1" onclick="updateProfile()">حفظ
+                            البيانات</button>
+                        <button type="button" class="btn danger-btn" onclick="logout()">خروج</button>
                     </form>
                 </div>
             </section>
 
-            <!-- Admin Panel Page -->
+            <!-- Admin -->
             <section id="page-admin" class="page" style="display: none;">
-                <h2 class="page-title text-warning"><i class="fa-solid fa-shield-halved"></i> لوحة التحكم والإدارة</h2>
-
-
-                <!-- Admin Dashboard Grid (Large List Style) -->
-                <div id="admin-dashboard-grid" class="admin-panel-section"
-                    style="display: flex; flex-direction: column; gap: 1rem;">
-                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('announcement')"
-                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
-                        <i class="fa-solid fa-bullhorn text-warning" style="font-size: 2rem;"></i>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.1rem; display: block;">التعميمات والإعلانات</span>
-                            <small class="text-muted">إدارة التبليغات العامة للطلاب</small>
+                <h2 class="page-title text-warning">لوحة الإدارة</h2>
+                <div id="admin-dashboard-grid" class="admin-panel-section admin-grid">
+                    <div class="admin-dashboard-card" onclick="switchAdminTab('announcement')">
+                        <i class="fa-solid fa-bullhorn text-primary"></i>
+                        <div class="admin-card-content">
+                            <span>الإعلانات</span>
+                            <small>إرسال تبليغات للطلاب</small>
                         </div>
-                    </button>
-                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('library-add')"
-                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
-                        <i class="fa-solid fa-book-medical text-primary" style="font-size: 2rem;"></i>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.1rem; display: block;">مكتبة المحاضرات</span>
-                            <small class="text-muted">إضافة وحذف الكتب والملازم</small>
+                    </div>
+                    <div class="admin-dashboard-card" onclick="switchAdminTab('library-add')">
+                        <i class="fa-solid fa-book-medical text-success"></i>
+                        <div class="admin-card-content">
+                            <span>المكتبة</span>
+                            <small>إضافة محاضرات جديدة</small>
                         </div>
-                    </button>
-                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('schedule-add')"
-                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
-                        <i class="fa-solid fa-calendar-days text-secondary" style="font-size: 2rem;"></i>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.1rem; display: block;">الجدول الأسبوعي</span>
-                            <small class="text-muted">تحديث أوقات المحاضرات والقاعات</small>
+                    </div>
+                    <div class="admin-dashboard-card" onclick="switchAdminTab('schedule-add')">
+                        <i class="fa-solid fa-calendar-plus text-secondary"></i>
+                        <div class="admin-card-content">
+                            <span>الجدول</span>
+                            <small>تنظيم الحصص الأسبوعية</small>
                         </div>
-                    </button>
-                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('quiz-add')"
-                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
-                        <i class="fa-solid fa-bolt text-info" style="font-size: 2rem;"></i>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.1rem; display: block;">سؤال اليوم (الكويزات)</span>
-                            <small class="text-muted">نشر أسئلة سريرية يومية</small>
+                    </div>
+                    <div class="admin-dashboard-card" onclick="switchAdminTab('quiz-add')">
+                        <i class="fa-solid fa-lightbulb text-warning"></i>
+                        <div class="admin-card-content">
+                            <span>الكويزات</span>
+                            <small>نشر السؤال اليومي</small>
                         </div>
-                    </button>
-                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('buddy-mgr')"
-                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
-                        <i class="fa-solid fa-user-doctor text-success" style="font-size: 2rem;"></i>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.1rem; display: block;">طلبات Study Buddy</span>
-                            <small class="text-muted">مراجعة والموافقة على طلبات الزملاء</small>
+                    </div>
+                    <div class="admin-dashboard-card" onclick="switchAdminTab('buddy-mgr')">
+                        <i class="fa-solid fa-handshake-angle text-info"></i>
+                        <div class="admin-card-content">
+                            <span>الـ Buddy</span>
+                            <small>إدارة طلبات المراجعة</small>
                         </div>
-                    </button>
-                    <button class="glass-card admin-dashboard-card" onclick="switchAdminTab('users')"
-                        style="padding: 1.5rem; flex-direction: row; justify-content: flex-start; gap: 1.5rem;">
-                        <i class="fa-solid fa-users text-muted" style="font-size: 2rem;"></i>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.1rem; display: block;">قائمة الطلاب</span>
-                            <small class="text-muted">عرض الطلاب المسجلين بالمنصة</small>
+                    </div>
+                    <div class="admin-dashboard-card" onclick="switchAdminTab('users')">
+                        <i class="fa-solid fa-users-gear text-danger"></i>
+                        <div class="admin-card-content">
+                            <span>المستخدمين</span>
+                            <small>قائمة الطلاب المسجلين</small>
                         </div>
-                    </button>
+                    </div>
                 </div>
 
-                <!-- Manage Sections -->
                 <div id="admin-announcement" class="admin-panel-section" style="display: none;">
-                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
-                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
-                    <div class="glass-card mb-3">
-                        <h3 class="mb-2">إضافة تعميم جديد</h3>
-                        <textarea id="admin-ad-content" rows="3" placeholder="اكتب التبليغ هنا..."></textarea>
-                        <button class="btn success-btn mt-2" onclick="addAd()"><i class="fa-solid fa-paper-plane"></i>
-                            نشر وإرسال</button>
+                    <button class="btn glass-btn mb-2" onclick="switchAdminTab('dashboard-grid')">رجوع</button>
+                    <div class="glass-card mb-2">
+                        <textarea id="admin-ad-content" placeholder="نص الإعلان..."></textarea>
+                        <button class="btn success-btn w-100" onclick="addAd()">نشر</button>
                     </div>
-                    <div id="admin-ads-list" class="flex-column gap-2 mt-2">
-                        <!-- List for Deleting -->
-                    </div>
+                    <div id="admin-ads-list"></div>
                 </div>
 
                 <div id="admin-library-add" class="admin-panel-section" style="display: none;">
-                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
-                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
-                    <div class="glass-card mb-3">
-                        <h3 class="mb-2">إضافة مادة/محاضرة</h3>
-                        <input type="text" id="admin-lib-title" placeholder="عنوان المحاضرة" class="mb-2">
-                        <input type="url" id="admin-lib-link" placeholder="رابط الملف" class="latin-text mb-2">
-                        <input type="text" id="admin-lib-type" placeholder="القسم (Anatomy/Fundamentals)" class="mb-2">
-                        <button class="btn primary-btn" onclick="addLibraryItem()">رفع وإضافة</button>
+                    <button class="btn glass-btn mb-2" onclick="switchAdminTab('dashboard-grid')">رجوع</button>
+                    <div class="glass-card mb-2">
+                        <input type="text" id="admin-lib-title" placeholder="عنوان المحاضرة" class="mb-1">
+                        <input type="url" id="admin-lib-link" placeholder="رابط الملف" class="mb-1">
+                        <input type="text" id="admin-lib-type" placeholder="القسم" class="mb-1">
+                        <button class="btn primary-btn w-100" onclick="addLibraryItem()">إضافة</button>
                     </div>
-                    <div id="admin-lib-manage-list" class="flex-column gap-2"></div>
+                    <div id="admin-lib-manage-list"></div>
                 </div>
 
                 <div id="admin-schedule-add" class="admin-panel-section" style="display: none;">
-                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
-                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
-                    <div class="glass-card mb-3">
-                        <h3>تحديث الجدول الأسبوعي</h3>
-                        <select id="admin-sched-day" class="mb-2">
+                    <button class="btn glass-btn mb-2" onclick="switchAdminTab('dashboard-grid')">رجوع</button>
+                    <div class="glass-card mb-2">
+                        <select id="admin-sched-day" class="mb-1">
                             <option value="الأحد">الأحد</option>
                             <option value="الاثنين">الاثنين</option>
                             <option value="الثلاثاء">الثلاثاء</option>
                             <option value="الأربعاء">الأربعاء</option>
                             <option value="الخميس">الخميس</option>
                         </select>
-                        <input type="text" id="admin-sched-subject" placeholder="اسم المادة" class="mb-2">
-                        <input type="text" id="admin-sched-time" placeholder="الوقت" class="mb-2">
-                        <input type="text" id="admin-sched-hall" placeholder="القاعة" class="mb-2">
-                        <button class="btn success-btn" onclick="addScheduleItem()">تثبيت في الجدول</button>
+                        <input type="text" id="admin-sched-subject" placeholder="المادة" class="mb-1">
+                        <input type="text" id="admin-sched-time" placeholder="الوقت" class="mb-1">
+                        <input type="text" id="admin-sched-hall" placeholder="القاعة" class="mb-1">
+                        <button class="btn success-btn w-100" onclick="addScheduleItem()">تثبيت</button>
                     </div>
-                    <div id="admin-sched-manage-list" class="flex-column gap-2"></div>
+                    <div id="admin-sched-manage-list"></div>
                 </div>
 
                 <div id="admin-quiz-add" class="admin-panel-section" style="display: none;">
-                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
-                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
-                    <div class="glass-card mb-3">
-                        <h3>سؤال اليوم</h3>
-                        <textarea id="admin-quiz-q" rows="2" placeholder="السؤال" class="mb-2"></textarea>
-                        <input type="text" id="admin-quiz-oa" placeholder="خيار A" class="mb-2">
-                        <input type="text" id="admin-quiz-ob" placeholder="خيار B" class="mb-2">
-                        <input type="text" id="admin-quiz-oc" placeholder="خيار C" class="mb-2">
-                        <select id="admin-quiz-ans" class="mb-2">
+                    <button class="btn glass-btn mb-2" onclick="switchAdminTab('dashboard-grid')">رجوع</button>
+                    <div class="glass-card mb-2">
+                        <textarea id="admin-quiz-q" placeholder="السؤال" class="mb-1"></textarea>
+                        <input type="text" id="admin-quiz-oa" placeholder="خيار A" class="mb-1">
+                        <input type="text" id="admin-quiz-ob" placeholder="خيار B" class="mb-1">
+                        <input type="text" id="admin-quiz-oc" placeholder="خيار C" class="mb-1">
+                        <select id="admin-quiz-ans" class="mb-1">
                             <option value="a">إجابة A</option>
                             <option value="b">إجابة B</option>
                             <option value="c">إجابة C</option>
                         </select>
-                        <textarea id="admin-quiz-exp" rows="2" placeholder="الشرح"></textarea>
-                        <button class="btn warning-btn mt-2" onclick="addDailyQuiz()">نشر السؤال</button>
+                        <textarea id="admin-quiz-exp" placeholder="الشرح"></textarea>
+                        <button class="btn warning-btn w-100 mt-1" onclick="addDailyQuiz()">نشر</button>
                     </div>
-                    <div id="admin-quiz-manage-list" class="flex-column gap-2"></div>
+                    <div id="admin-quiz-manage-list"></div>
                 </div>
 
                 <div id="admin-buddy-mgr" class="admin-panel-section" style="display: none;">
-                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
-                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
-                    <div class="section-header">طلبات مشاركة الدراسة (قيد الانتظار)</div>
-                    <div id="admin-buddy-pending" class="flex-column gap-2"></div>
-                    <div class="section-header mt-3">الطلبات المنشورة (سابقاً)</div>
-                    <div id="admin-buddy-approved" class="flex-column gap-2"></div>
+                    <button class="btn glass-btn mb-2" onclick="switchAdminTab('dashboard-grid')">رجوع</button>
+                    <div class="section-header">قيد الانتظار</div>
+                    <div id="admin-buddy-pending" class="mb-2"></div>
+                    <div class="section-header">الطلبات المنشورة</div>
+                    <div id="admin-buddy-approved"></div>
                 </div>
 
                 <div id="admin-users" class="admin-panel-section" style="display: none;">
-                    <button class="admin-back-btn" onclick="switchAdminTab('dashboard-grid')"><i
-                            class="fa-solid fa-circle-chevron-right"></i> لوحة التحكم</button>
-                    <div class="glass-card mb-2"
-                        style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 style="margin:0; font-size:1rem;">قائمة الطلاب المسجلين</h3>
-                        <button class="btn primary-btn" onclick="fetchUsers()"
-                            style="width:auto; padding:0.4rem 0.8rem; font-size: 0.75rem;"><i
-                                class="fa-solid fa-rotate"></i> تحديث</button>
-                    </div>
-                    <div id="admin-users-list" class="flex-column gap-2"></div>
+                    <button class="btn glass-btn mb-2" onclick="switchAdminTab('dashboard-grid')">رجوع</button>
+                    <div id="admin-users-list"></div>
                 </div>
             </section>
-
         </main>
 
-        <!-- Bottom Navigation -->
         <nav id="bottom-nav" class="bottom-nav">
-            <button class="nav-item" onclick="navigate('library')" data-target="library">
-                <i class="fa-solid fa-book-medical"></i>
-                <span>المحاضرات</span>
-            </button>
-            <button class="nav-item" onclick="navigate('schedule')" data-target="schedule">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>الجدول</span>
-            </button>
-            <button class="nav-item active" onclick="navigate('dashboard')" data-target="dashboard">
-                <i class="fa-solid fa-house-chimney-medical"></i>
-                <span>الرئيسية</span>
-            </button>
-            <button class="nav-item" onclick="navigate('chat')" data-target="chat">
-                <i class="fa-solid fa-brain"></i>
-                <span>A.I</span>
-            </button>
-            <button class="nav-item" onclick="navigate('skills')" data-target="skills">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>المهارات</span>
-            </button>
+            <button class="nav-item" onclick="navigate('library')" data-target="library"><i
+                    class="fa-solid fa-book"></i><span>المحاضرات</span></button>
+            <button class="nav-item" onclick="navigate('schedule')" data-target="schedule"><i
+                    class="fa-solid fa-calendar"></i><span>الجدول</span></button>
+            <button class="nav-item active" onclick="navigate('dashboard')" data-target="dashboard"><i
+                    class="fa-solid fa-house"></i><span>الرئيسية</span></button>
+            <button class="nav-item" onclick="navigate('chat')" data-target="chat"><i
+                    class="fa-solid fa-brain"></i><span>AI</span></button>
+            <button class="nav-item" onclick="navigate('profile')" data-target="profile"><i
+                    class="fa-solid fa-user"></i><span>ملفي</span></button>
         </nav>
     </div>
 
     <!-- Modals -->
-    <!-- Social Links Modal -->
     <div id="social-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                <h3 style="margin:0;">روابط التواصل</h3>
-                <button class="action-btn" onclick="document.getElementById('social-modal').style.display='none'"><i
-                        class="fa-solid fa-xmark"></i></button>
-            </div>
-
+        <div class="modal-content">
+            <button class="close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</button>
+            <h3>تواصل معنا</h3>
             <div class="social-list">
-                <div class="social-group-label">الادارة</div>
-                <a href="https://t.me/ms0oll" target="_blank" class="social-item">
-                    <span>مصطفى جبار</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
-                <a href="https://t.me/QG_491" target="_blank" class="social-item">
-                    <span>مجتبى حازم</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
-
-                <div class="social-group-label">الممثلين</div>
-                <a href="https://t.me/@txt7l" target="_blank" class="social-item">
-                    <span>مجتبى مالك</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
-
-                <div class="social-group-label">القنوات الرسمية</div>
-                <a href="https://t.me/+qlol3SKFZpk0ZDli" target="_blank" class="social-item">
-                    <span>قناة المرحلة الاولى الرسمية</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
-                <a href="https://t.me/+5gRfqqpnkzwzODJi" target="_blank" class="social-item">
-                    <span>جروب الاحياء الرسمي</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
-
-                <div class="social-group-label">القنوات الدراسية</div>
-                <a href="https://t.me/alialakbar2005" target="_blank" class="social-item">
-                    <span>قناة الملفات والملخصات</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
-                <a href="https://t.me/txt7ll" target="_blank" class="social-item">
-                    <span>تبليغات المجموعة 5</span>
-                    <i class="fa-brands fa-telegram"></i>
-                </a>
+                <a href="https://t.me/ms0oll" target="_blank" class="social-item">مصطفى جبار <i
+                        class="fa-brands fa-telegram"></i></a>
+                <a href="https://t.me/alialakbar2005" target="_blank" class="social-item">قناة الملفات <i
+                        class="fa-brands fa-telegram"></i></a>
             </div>
         </div>
     </div>
-
-    <!-- Study Buddy Request Modal -->
     <div id="buddy-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
-            <h3><i class="fa-solid fa-user-plus text-primary"></i> طرح طلب دراسة</h3>
-            <p class="text-center text-muted mb-3" style="font-size:0.9rem;">شارك زملاءك لتقوية المهارات والفهم العلمي.
-            </p>
-            <div class="input-group">
-                <input type="text" id="buddy-subject" placeholder="مثال: مراجعة أنسجة (Histology) - نظام الوجبة">
-                <i class="fa-solid fa-book-open"></i>
-            </div>
-            <div class="input-group">
-                <input type="text" id="buddy-tele" class="latin-text" style="direction:ltr; text-align:left;"
-                    placeholder="يوزر التليجرام الخاص بك @username">
-                <i class="fa-brands fa-telegram text-primary" style="left:1.2rem; right:auto;"></i>
-            </div>
-            <div class="input-group">
-                <textarea id="buddy-details" rows="3"
-                    placeholder="تفاصيل (مثال: محتاج شخص يراجع وياي باجر العصر بالمكتبة المركزية)"></textarea>
-            </div>
-            <div class="flex-row gap-2 mt-3">
+            <h3>طرح طلب دراسة</h3>
+            <input type="text" id="buddy-subject" placeholder="المادة" class="mb-1">
+            <input type="text" id="buddy-tele" placeholder="@username" class="mb-1 latin-text">
+            <textarea id="buddy-details" rows="3" placeholder="التفاصيل..."></textarea>
+            <div class="flex-row gap-2 mt-2">
                 <button class="btn success-btn flex-1" onclick="submitBuddyRequest()">نشر</button>
                 <button class="btn glass-btn flex-1"
                     onclick="document.getElementById('buddy-modal').style.display='none'">إلغاء</button>
             </div>
         </div>
     </div>
-
-    <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
     <script src="script.js"></script>
