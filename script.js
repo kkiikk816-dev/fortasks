@@ -552,7 +552,7 @@ function setupDictSearch() {
 function saveNotes() {
     state.notes = document.getElementById('my-notes').value;
     localStorage.setItem('myNotes', state.notes);
-    showToast('تم حفظ الملاحظات السريرية في جهازك بنجاح.', 'success');
+    showToast('تم حفظ الملاحظات في جهازك بنجاح.', 'success');
 }
 
 // 7. Study Buddy (`study_requests`)
@@ -686,7 +686,7 @@ async function filterSchedule(day, el) {
 }
 
 async function fetchTodaySchedule() {
-    const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
     const today = days[new Date().getDay()];
 
     const { data } = await sb.from('schedule').select('*').eq('day', today).order('created_at', { ascending: true });
@@ -727,7 +727,7 @@ async function updateProfile() {
         showToast('حدث خطأ في ربط البيانات بقاعدة البيانات.', 'error');
     } else {
         state.profile = { ...state.profile, ...updates };
-        showToast('تم تعزيز الهوية السريرية في المنظومة.', 'success');
+        showToast('تم تعزيز الهوية التمريضية في المنظومة.', 'success');
     }
 }
 
@@ -1073,7 +1073,7 @@ async function sendMessageToAI(customPrompt = null) {
     const fullContext = state.ai.pdfTexts.join('\n\n');
 
     const systemPrompt = `أنت مساعد أكاديمي متخصص لطلاب التمريض. وظيفتك هي الشرح والتلخيص والاختبار بناءً على الملفات المرفوعة. 
-    استخدم اللغة العربية الأكاديمية المبسطة.
+    استخدم اللغة العربية المدمجة مع الانجليزية الأكاديمية المبسطة ولكن العربية هي اللغة الغالبة على الاخرى.
     ${fullContext ? `اعتمد على هذا السياق المستخرج من المحاضرات:\n${fullContext}` : 'أجب بناءً على خبرتك الطبية التمريضية بأسلوب أكاديمي.'}
     
     قواعد التنسيق الإجبارية:
@@ -1189,7 +1189,7 @@ function startAIQuiz() {
     if (state.ai.pdfTexts.length === 0) {
         return showToast('ارفع محاضراتك أولاً لنتمكن من اختبارك فيها! 🧪', 'info');
     }
-    sendMessageToAI("قم بصياغة 5 أسئلة اختيار من متعدد (MCQs) بناءً على نصوص المحاضرات المرفوعة. ركز على النقاط السريرية المهمة، واذكر الإجابات الصحيحة في النهاية بتنسيق جدول.");
+    sendMessageToAI("قم بصياغة 10 أسئلة اختيار من متعدد (MCQs) بناءً على نصوص المحاضرات المرفوعة. ركز على النقاط التمريضية المهمة، واذكر الإجابات الصحيحة في النهاية بتنسيق جدول.");
 }
 
 function copyToClipboard(btn) {
