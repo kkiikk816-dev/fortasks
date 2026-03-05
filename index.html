@@ -496,15 +496,28 @@
         </div>
     </div>
     <div id="buddy-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <h3>طرح طلب دراسة</h3>
-            <input type="text" id="buddy-subject" placeholder="المادة" class="mb-1">
-            <input type="text" id="buddy-tele" placeholder="@username" class="mb-1 latin-text">
-            <textarea id="buddy-details" rows="3" placeholder="التفاصيل..."></textarea>
-            <div class="flex-row gap-2 mt-2">
-                <button class="btn success-btn flex-1" onclick="submitBuddyRequest()">نشر</button>
-                <button class="btn glass-btn flex-1"
-                    onclick="document.getElementById('buddy-modal').style.display='none'">إلغاء</button>
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-handshake-angle"></i> طلب دراسة جديد</h3>
+                <button class="close-modal" onclick="document.getElementById('buddy-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <input type="text" id="buddy-subject" placeholder="المادة الدراسية (مثال: تشريح)">
+                    <i class="fa-solid fa-book-medical"></i>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="buddy-tele" placeholder="@username" class="latin-text">
+                    <i class="fa-brands fa-telegram"></i>
+                </div>
+                <div class="input-group">
+                    <textarea id="buddy-details" rows="3" placeholder="اكتب تفاصيل إضافية..."></textarea>
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div class="flex-row gap-2 mt-2">
+                    <button class="btn success-btn flex-1" onclick="submitBuddyRequest()">نشر الطلب</button>
+                    <button class="btn glass-btn flex-1" onclick="document.getElementById('buddy-modal').style.display='none'">إلغاء</button>
+                </div>
             </div>
         </div>
     </div>
