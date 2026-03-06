@@ -1444,3 +1444,36 @@ function copyToClipboard(btn) {
         setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
     });
 }
+
+
+// دالة إعداد تطبيق الويب التقدمي (PWA)
+function setupPWA() {
+    // 1. تسجيل الـ Service Worker للعمل بدون إنترنت وللتثبيت
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('✅ PWA: Service Worker مسجل بنجاح'))
+                .catch(err => console.log('❌ PWA: فشل تسجيل Service Worker', err));
+        });
+    }
+
+    // 2. معالجة ظهور زر التثبيت (اختياري إذا أردت إظهار زر مخصص)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // منع المتصفح من إظهار التنبيه التلقائي فوراً
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('✅ التطبيق جاهز للتثبيت على الهاتف');
+        
+        // هنا يمكنك إظهار زر "تثبيت التطبيق" للمستخدم إذا أردت
+    });
+
+    // 3. التأكد من أن التطبيق يعمل بملء الشاشة عند فتحه من الأيقونة
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('📱 يتم التشغيل الآن كـ تطبيق مثبت');
+    }
+}
+
+// استدعاء الدالة عند تشغيل الموقع
+setupPWA();
+
