@@ -1139,27 +1139,46 @@ async function addDailyQuiz() {
 }
 
 async function addScheduleItem() {
+    const btn = event?.target || document.querySelector('#admin-schedule-add .primary-btn');
     const day = document.getElementById('admin-sched-day').value;
     const subject = document.getElementById('admin-sched-subject').value;
     const time = document.getElementById('admin-sched-time').value;
     const hall = document.getElementById('admin-sched-hall').value;
 
-    if (!subject || !time || !hall) return showToast('يرجى ملء جميع البيانات لإضافة الحصة للجدول.', 'error');
+    if (!subject || !time || !hall) return showToast('يرجى ملء جميع البيانات.', 'error');
 
-    const { error } = await sb.from('schedule').insert([{
-        day, subject, time, hall
-    }]);
+    // 1. تفعيل حالة التحميل وتعطيل الزر لمنع التجمد
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإضافة...';
 
-    if (error) showToast('حدث خطأ أثناء الاتصال بقاعدة البيانات.', 'error');
-    else {
-        showToast('تمت إضافة المحاضرة إلى الجدول الأسبوعي!', 'success');
-        document.getElementById('admin-sched-subject').value = '';
-        document.getElementById('admin-sched-time').value = '';
-        document.getElementById('admin-sched-hall').value = '';
-        fetchSchedule();
-        fetchAdminSchedule();
+    try {
+        const { error } = await sb.from('schedule').insert([{ day, subject, time, hall }]);
+
+        if (error) {
+            showToast('حدث خطأ في قاعدة البيانات: ' + error.message, 'error');
+        } else {
+            showToast('تمت إضافة المحاضرة بنجاح!', 'success');
+
+            // 2. تصفير الحقول
+            document.getElementById('admin-sched-subject').value = '';
+            document.getElementById('admin-sched-time').value = '';
+            document.getElementById('admin-sched-hall').value = '';
+
+            // 3. تحديث البيانات (تأكد من وجود هذه الوظائف)
+            if (typeof fetchSchedule === "function") await fetchSchedule();
+            if (typeof fetchAdminSchedule === "function") await fetchAdminSchedule();
+        }
+    } catch (err) {
+        console.error("Critical Error:", err);
+        showToast('حدث خطأ غير متوقع في النظام.', 'error');
+    } finally {
+        // 4. إعادة الزر لحالته الطبيعية
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 }
+
 // --- AI Buddy & Groq API Integration ---
 
 async function handlePDFUpload(event) {
