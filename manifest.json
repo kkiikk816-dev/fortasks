@@ -1,0 +1,20 @@
+{
+  "name": "أوكسجين التمريض",
+  "short_name": "Oxygen",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0b1121",
+  "theme_color": "#0b1121",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/CL52rzVc/a2043f1739b2da955eba5a2c1bbd0bb3.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://i.postimg.cc/CL52rzVc/a2043f1739b2da955eba5a2c1bbd0bb3.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
