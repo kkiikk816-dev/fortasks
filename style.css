@@ -384,66 +384,55 @@ body {
 }
 
 /* Animations */
+/* --- 1. تأثير الظهور التدريجي --- */
 @keyframes fadeIn {
-  from {
+  0% {
       opacity: 0;
   }
-
-  to {
+  100% {
       opacity: 1;
   }
 }
 
+/* --- 2. تأثير الانزلاق للأعلى --- */
 @keyframes slideUp {
-  from {
+  0% {
       opacity: 0;
-      transform: translateY(25px);
+      transform: translateY(20px); /* تقليل المسافة لتبدو الحركة أسرع وأكثر استجابة */
   }
-
-  to {
+  100% {
       opacity: 1;
       transform: translateY(0);
   }
 }
 
+/* --- 3. تأثير تخطيط القلب (ECG) المطور طبياً --- */
 @keyframes ecgLine {
-  0% {
-      transform: scaleY(1);
-  }
-
-  10% {
-      transform: scaleY(1);
-  }
-
-  15% {
-      transform: scaleY(3);
-  }
-
-  20% {
-      transform: scaleY(-2);
-  }
-
-  25% {
-      transform: scaleY(1.5);
-  }
-
-  30% {
-      transform: scaleY(1);
-  }
-
-  100% {
-      transform: scaleY(1);
-  }
+  0%, 10% { transform: scaleY(1); }
+  15% { transform: scaleY(1.2); }  /* موجة P (P wave) */
+  18% { transform: scaleY(0.7); }  /* نزول Q (Q wave) */
+  22% { transform: scaleY(3.5); }  /* قمة R (R wave) - النبضة الكبرى */
+  26% { transform: scaleY(-1.5); } /* نزول S (S wave) */
+  31% { transform: scaleY(1); }    /* عودة لخط الأساس */
+  36% { transform: scaleY(1.4); }  /* موجة T (T wave) */
+  42%, 100% { transform: scaleY(1); } /* فترة الراحة */
 }
 
+/* --- 4. الكلاسات المشغلة للأنيميشن --- */
 .active {
   display: block;
-  animation: fadeIn var(--transition-normal) forwards;
+  /* إضافة cubic-bezier تعطي إحساساً بحركة تطبيقات iOS (سريعة في البداية وناعمة في النهاية) */
+  animation: fadeIn var(--transition-normal, 0.3s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  /* استخدام will-change يخبر كرت الشاشة بالاستعداد للحركة مما يمنع التقطيع */
+  will-change: opacity;
 }
 
 .slide-up {
-  animation: slideUp var(--transition-normal) forwards;
+  /* أضفت قيمة احتياطية (0.4s) في حال لم يتعرف المتصفح على المتغير */
+  animation: slideUp var(--transition-normal, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
+
 
 /* Splash Screen */
 #splash-screen {
