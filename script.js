@@ -1464,7 +1464,7 @@ function setupPWA() {
         e.preventDefault();
         deferredPrompt = e;
         console.log('✅ التطبيق جاهز للتثبيت على الهاتف');
-        
+
         // هنا يمكنك إظهار زر "تثبيت التطبيق" للمستخدم إذا أردت
     });
 
@@ -1476,4 +1476,4 @@ function setupPWA() {
 
 // استدعاء الدالة عند تشغيل الموقع
 setupPWA();
-
+ 
