@@ -2543,17 +2543,72 @@ body {
 
 
 
-.schedule-vertical-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px; /* المسافة بين المحاضرات */
-  padding-bottom: 20px;
+/* --- Weekly Schedule Grid Layout --- */
+.weekly-schedule-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 2rem;
 }
 
-.schedule-vertical-list .glass-card {
-  transition: transform 0.2s ease;
+.schedule-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* قسمين متساويين */
+    gap: 0.8rem;
 }
 
-.schedule-vertical-list .glass-card:active {
-  transform: scale(0.98); /* تأثير بسيط عند الضغط */
+.schedule-row.center {
+    display: flex;
+    justify-content: center;
+}
+
+/* إعطاء يوم الثلاثاء نفس عرض الأيام الأخرى ليكون متناسقاً في المنتصف */
+.schedule-row.center > .day-card-container {
+    width: calc(50% - 0.4rem); 
+    min-width: 150px;
+}
+
+.day-card-container {
+    padding: 0.8rem;
+}
+
+.day-header {
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--primary);
+    padding: 0.4rem;
+    background: rgba(14, 165, 233, 0.1);
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.lesson-card {
+    border-right: 3px solid var(--primary);
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.lesson-card:hover {
+    transform: translateX(-3px);
+    background: rgba(14, 165, 233, 0.1);
+}
+
+.lesson-card h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.85rem;
+    color: #fff;
+    line-height: 1.4;
+}
+
+.lesson-details {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
 }

@@ -795,48 +795,77 @@ async function submitBuddyRequest() {
     }
 }
 
-async function filterSchedule(day, el) {
+// دالة عرض الجدول الأسبوعي بالكامل
+async function fetchSchedule() {
     const list = document.getElementById('schedule-container');
     if (!list) return;
 
-    // 1. تحديث الأزرار
-    document.querySelectorAll('#schedule-tabs .tab-pill').forEach(b => {
-        b.classList.toggle('active', b.innerText.trim() === day);
-    });
-
-    // 2. مؤشر تحميل
-    list.innerHTML = `<div class="text-center" style="padding:2rem; opacity:0.6;"><i class="fa-solid fa-spinner fa-spin"></i></div>`;
+    list.innerHTML = `<div class="text-center" style="padding:2rem; opacity:0.6;"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الجدول...</div>`;
 
     try {
-        const { data, error } = await sb.from('schedule').select('*').eq('day', day).order('created_at', { ascending: true });
+        // جلب كل المحاضرات
+        const { data, error } = await sb.from('schedule').select('*').order('created_at', { ascending: true });
         if (error) throw error;
 
-        list.innerHTML = ''; // مسح القديم
+        // تجهيز مصفوفات فارغة لكل يوم
+        const scheduleByDay = {
+            'الأحد': [], 'الاثنين': [], 'الثلاثاء': [], 'الأربعاء': [], 'الخميس': []
+        };
 
-        if (!data || data.length === 0) {
-            list.innerHTML = `<div class="glass-card text-center p-4"><p>لا توجد محاضرات ليوم ${day} ☕</p></div>`;
-            return;
+        // توزيع المحاضرات على الأيام
+        if (data) {
+            data.forEach(s => {
+                if (scheduleByDay[s.day]) {
+                    scheduleByDay[s.day].push(s);
+                }
+            });
         }
 
-        // 3. البناء الطولي (Vertical)
-        let html = `<div class="schedule-vertical-stack slide-up" style="display:flex; flex-direction:column; gap:15px;">`;
-        data.forEach((s, idx) => {
-            html += `
-                <div class="glass-card" style="border-right: 4px solid var(--primary); padding: 15px;">
-                    <span style="font-size:0.7rem; color:var(--primary); font-weight:bold;">محاضرة ${idx + 1}</span>
-                    <h4 style="margin: 5px 0; font-size:1.1rem;">${s.subject}</h4>
-                    <div style="font-size:0.9rem; color:var(--text-muted);">
-                        <div><i class="fa-regular fa-clock"></i> ${s.time}</div>
-                        <div><i class="fa-solid fa-location-dot"></i> ${s.hall}</div>
-                    </div>
-                </div>`;
-        });
-        html += `</div>`;
-        list.innerHTML = html;
+        // دالة مساعدة لطباعة بطاقة اليوم الواحد
+        const renderDay = (dayName) => {
+            const lessons = scheduleByDay[dayName];
+            let html = `<div class="day-card-container glass-card slide-up">
+                            <div class="day-header">${dayName}</div>`;
+
+            if (lessons.length === 0) {
+                html += `<div class="text-muted text-center" style="font-size:0.75rem; padding: 1rem 0;">لا توجد محاضرات</div>`;
+            } else {
+                lessons.forEach((s) => {
+                    html += `
+                        <div class="lesson-card">
+                            <h4>${s.subject}</h4>
+                            <div class="lesson-details">
+                                <span><i class="fa-regular fa-clock"></i> ${s.time}</span>
+                                <span><i class="fa-solid fa-location-dot"></i> ${s.hall}</span>
+                            </div>
+                        </div>`;
+                });
+            }
+            html += `</div>`;
+            return html;
+        };
+
+        // دمج الأيام في الهيكل المطلوب (Grid)
+        list.innerHTML = `
+            <div class="weekly-schedule-wrapper">
+                <div class="schedule-row">
+                    ${renderDay('الأحد')}
+                    ${renderDay('الاثنين')}
+                </div>
+                <div class="schedule-row center">
+                    ${renderDay('الثلاثاء')}
+                </div>
+                <div class="schedule-row">
+                    ${renderDay('الأربعاء')}
+                    ${renderDay('الخميس')}
+                </div>
+            </div>
+        `;
     } catch (err) {
         showToast("فشل في تحديث الجدول", "error");
     }
 }
+
 
 
 
