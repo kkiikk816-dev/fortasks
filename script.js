@@ -110,9 +110,8 @@ const medicalDict = [
 
 // dailyTips removed - no longer used in UI
 
-// --- Boot Logic ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Daily Tip removed.
+    // 1. تحميل البيانات المحلية (الملاحظات والمهارات)
     const notesEl = document.getElementById('my-notes');
     if (notesEl) {
         notesEl.value = state.notes;
@@ -121,10 +120,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupDictSearch();
     renderSkills();
 
-    // Initial profile display if state is preset
+    // 2. إظهار التطبيق إذا كان المستخدم مسجلاً مسبقاً
     if (state.user) showApp();
 
-    // Splash Screen Hiding Logic
+    // 3. منطق إخفاء شاشة التحميل (Splash Screen)
     const hideSplash = () => {
         const splash = document.getElementById('splash-screen');
         if (!splash || splash.style.display === 'none') return;
@@ -137,20 +136,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 600);
     };
 
-    // Failsafe: Always hide splash after 4 seconds even if auth fails
+    // مؤقت أمان لإخفاء الشاشة حتى لو فشل الاتصال
     const splashFailsafe = setTimeout(hideSplash, 3500);
 
-    // Initial Auth State
+    // 4. التحقق من حالة تسجيل الدخول وجلب البيانات الأولية
     try {
         const { data: { session } } = await sb.auth.getSession();
         await handleAuthChange(session);
-        // If successful, hide splash sooner
+
+        // --- التعديل الجوهري هنا ---
+        // جلب جدول اليوم في الخلفية فور تأكيد الدخول
+        if (typeof loadDefaultSchedule === 'function') {
+            await loadDefaultSchedule();
+        }
+        // ---------------------------
+
         setTimeout(hideSplash, 1000);
     } catch (err) {
         console.error("Auth init failed:", err);
-        hideSplash(); // Show whatever we have (auth or placeholder)
+        hideSplash(); 
     }
 
+    // 5. مراقبة تغيير حالة المستخدم (تسجيل خروج/دخول)
     sb.auth.onAuthStateChange(async (_event, session) => {
         await handleAuthChange(session);
     });
@@ -158,24 +165,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupBottomNavScroll();
 });
 
-function setupBottomNavScroll() {
-    let lastScrollY = 0;
-    const bottomNav = document.getElementById('bottom-nav');
-
-    // Since it's a SPA, we need to handle scroll on the active screen
-    document.querySelectorAll('.screen').forEach(screen => {
-        screen.addEventListener('scroll', () => {
-            if (window.innerWidth > 500) return; // Only for mobile-like views
-            const currentScrollY = screen.scrollTop;
-            if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                bottomNav.classList.add('hide');
-            } else {
-                bottomNav.classList.remove('hide');
-            }
-            lastScrollY = currentScrollY;
-        });
-    });
-}
 
 // --- Auth & Profile Management ---
 async function handleAuthChange(session) {
@@ -806,99 +795,50 @@ async function submitBuddyRequest() {
     }
 }
 
-// 8. Weekly Schedule (`schedule`)
-async function fetchSchedule() {
-    const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
-    const activePill = document.querySelector('#schedule-tabs .tab-pill.active');
-    const filterDay = activePill ? activePill.innerText : days[0];
-
-    filterSchedule(filterDay);
-}
-
-// Function to refresh all data
-async function refreshAllData() {
-    if (state.user) {
-        await loadSupabaseData();
-    }
-}
-
 async function filterSchedule(day, el) {
-    if (el) {
-        document.querySelectorAll('#schedule-tabs .tab-pill').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-    } else {
-        // Find corresponding button to set active if no el passed
-        document.querySelectorAll('#schedule-tabs .tab-pill').forEach(b => {
-            if (b.innerText.trim() === day) {
-                b.classList.add('active');
-            } else {
-                b.classList.remove('active');
-            }
-        });
-    }
-
-    const { data, error } = await sb.from('schedule').select('*').eq('day', day).order('created_at', { ascending: true });
-    // In Supabase if no matching column it might return empty array. We fall back safely.
     const list = document.getElementById('schedule-container');
     if (!list) return;
-    list.innerHTML = '';
 
-    if (!data || data.length === 0) {
-        list.innerHTML = `<div class="glass-card text-center slide-up" style="grid-column:1/-1; padding: 2rem;">
-            <i class="fa-solid fa-mug-hot" style="font-size: 1.6rem; color: var(--text-muted); margin-bottom: 0.6rem; display: block;"></i>
-            <p class="text-muted" style="font-size: 0.85rem;">لا توجد محاضرات في هذا اليوم ☕</p>
-        </div>`;
-        return;
-    }
-
-    let html = `
-        <div class="glass-card slide-up mb-3" style="border-radius: 20px;">
-            <h3 style="margin-bottom:1rem; font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; color: var(--primary);">
-                <i class="fa-solid fa-calendar-day"></i> جدول يوم ${day}
-            </h3>
-            <div class="schedule-horizontal-row">
-                ${data.map((s, idx) => `
-                    <div class="schedule-item">
-                        <span class="lecture-badge">محاضرة ${idx + 1}</span>
-                        <h4 class="subject-name">${s.subject}</h4>
-                        <div class="lecture-meta">
-                            <span><i class="fa-regular fa-clock"></i> ${s.time}</span>
-                            <span><i class="fa-solid fa-location-dot"></i> ${s.hall}</span>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    list.innerHTML = html;
-}
-
-async function fetchTodaySchedule() {
-    const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-    const today = days[new Date().getDay()];
-
-    const { data } = await sb.from('schedule').select('*').eq('day', today).order('created_at', { ascending: true });
-    const list = document.getElementById('today-schedule-list');
-    if (!list) return;
-    list.innerHTML = '';
-
-    if (!data || data.length === 0) {
-        list.innerHTML = `<p class="text-muted text-center" style="padding:1rem; font-size: 0.85rem;">لا يوجد محاضرات لليوم ☕</p>`;
-        return;
-    }
-
-    data.forEach(s => {
-        list.innerHTML += `
-            <div class="today-sched-item">
-                <div class="today-sched-info">
-                    <span class="today-sched-subject">${s.subject}</span>
-                    <span class="today-sched-meta">${s.time} | ${s.hall}</span>
-                </div>
-                <i class="fa-solid fa-chevron-left" style="font-size: 0.7rem; color: var(--text-muted);"></i>
-            </div>
-        `;
+    // 1. تحديث الأزرار
+    document.querySelectorAll('#schedule-tabs .tab-pill').forEach(b => {
+        b.classList.toggle('active', b.innerText.trim() === day);
     });
+
+    // 2. مؤشر تحميل
+    list.innerHTML = `<div class="text-center" style="padding:2rem; opacity:0.6;"><i class="fa-solid fa-spinner fa-spin"></i></div>`;
+
+    try {
+        const { data, error } = await sb.from('schedule').select('*').eq('day', day).order('created_at', { ascending: true });
+        if (error) throw error;
+
+        list.innerHTML = ''; // مسح القديم
+
+        if (!data || data.length === 0) {
+            list.innerHTML = `<div class="glass-card text-center p-4"><p>لا توجد محاضرات ليوم ${day} ☕</p></div>`;
+            return;
+        }
+
+        // 3. البناء الطولي (Vertical)
+        let html = `<div class="schedule-vertical-stack slide-up" style="display:flex; flex-direction:column; gap:15px;">`;
+        data.forEach((s, idx) => {
+            html += `
+                <div class="glass-card" style="border-right: 4px solid var(--primary); padding: 15px;">
+                    <span style="font-size:0.7rem; color:var(--primary); font-weight:bold;">محاضرة ${idx + 1}</span>
+                    <h4 style="margin: 5px 0; font-size:1.1rem;">${s.subject}</h4>
+                    <div style="font-size:0.9rem; color:var(--text-muted);">
+                        <div><i class="fa-regular fa-clock"></i> ${s.time}</div>
+                        <div><i class="fa-solid fa-location-dot"></i> ${s.hall}</div>
+                    </div>
+                </div>`;
+        });
+        html += `</div>`;
+        list.innerHTML = html;
+    } catch (err) {
+        showToast("فشل في تحديث الجدول", "error");
+    }
 }
+
+
 
 // 9. Profile Update (`profiles`)
 async function updateProfile() {
@@ -1465,6 +1405,38 @@ function copyToClipboard(btn) {
 }
 
 
+function logoutAdmin() {
+    state.isAdmin = false;
+    document.getElementById('admin-panel').classList.remove('active');
+    document.getElementById('profile').classList.add('active');
+    showToast('تم تسجيل الخروج من لوحة التحكم', 'success');
+}
+
+
+
+function showSection(sectionId) {
+    // إظهار القسم المطلوب
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(sectionId);
+    if(target) target.classList.add('active');
+
+    // تحديث الأزرار السفلية
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if(item.getAttribute('onclick').includes(sectionId)) item.classList.add('active');
+    });
+
+    // جلب البيانات فوراً عند الدخول للقسم
+    if (sectionId === 'schedule') {
+        loadDefaultSchedule(); // دالة ذكية تجلب جدول اليوم
+    } else if (sectionId === 'library') {
+        if(typeof fetchLibrary === 'function') fetchLibrary();
+    }
+}
+
+
+
+
 // دالة إعداد تطبيق الويب التقدمي (PWA)
 function setupPWA() {
     // 1. تسجيل الـ Service Worker للعمل بدون إنترنت وللتثبيت
@@ -1495,4 +1467,4 @@ function setupPWA() {
 
 // استدعاء الدالة عند تشغيل الموقع
 setupPWA();
- 
+

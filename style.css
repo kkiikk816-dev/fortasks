@@ -2540,3 +2540,20 @@ body {
     color: var(--primary, #00d4ff);
     transform: translateY(-1px);
 }
+
+
+
+.schedule-vertical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* المسافة بين المحاضرات */
+  padding-bottom: 20px;
+}
+
+.schedule-vertical-list .glass-card {
+  transition: transform 0.2s ease;
+}
+
+.schedule-vertical-list .glass-card:active {
+  transform: scale(0.98); /* تأثير بسيط عند الضغط */
+}
